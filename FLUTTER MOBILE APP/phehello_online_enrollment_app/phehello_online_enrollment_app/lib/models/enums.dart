@@ -1,3 +1,8 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
 /// Application status vocabulary (SRS sequence diagrams / wireframes).
 /// All status strings live here so they are never scattered through the UI.
 enum ApplicationStatus {
