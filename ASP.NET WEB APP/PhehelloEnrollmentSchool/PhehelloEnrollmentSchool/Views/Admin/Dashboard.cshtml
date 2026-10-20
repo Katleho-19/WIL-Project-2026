@@ -1,0 +1,38 @@
+@model AdminDashboardViewModel
+@{ ViewData["Title"] = "Administrator Dashboard"; ViewData["Nav"] = "Dashboard"; }
+<div class="page-head">
+    <div><h1>Administrator Dashboard</h1><p class="subtitle">Overview of current enrolment activity and application progress.</p></div>
+    <div class="greeting"><strong>@Fmt.Greeting(), Administrator</strong><span>@Model.YearLabel</span></div>
+</div>
+
+<div class="stats">
+    <div class="card stat"><div class="label">Total Applications</div><div class="num">@Model.Total</div><div class="cap">Running application count</div></div>
+    <div class="card stat"><div class="label">Approved</div><div class="num">@Model.Approved</div><div class="cap">Accepted applications</div></div>
+    <div class="card stat"><div class="label">Rejected</div><div class="num">@Model.Rejected</div><div class="cap">Rejected applications</div></div>
+    <div class="card stat"><div class="label">Pending Review</div><div class="num">@Model.Pending</div><div class="cap">Awaiting administrator review</div></div>
+</div>
+
+<div class="grid-2">
+    <div class="card"><h2>Weekly Application Trend</h2><partial name="_WeekBars" model="Model.Weeks" /></div>
+    <div class="card">
+        <h2>Admissions Window</h2>
+        <div class="sub-card"><div class="k">Academic year</div><div class="v">@Model.YearLabel</div></div>
+        <div class="sub-card"><div class="k">System status</div><div class="v @(Model.Open ? "open" : "closed")">@(Model.Open ? "Open" : "Closed")</div></div>
+        <a class="btn btn-gold btn-sm" asp-action="Applications">View Applications</a>
+    </div>
+</div>
+
+<div class="card table-card">
+    <h2 style="padding:6px 6px 0">Recent Applications</h2>
+    <table class="t">
+        <thead><tr><th>Application ID</th><th>Learner</th><th>Submitted On</th><th>Status</th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.Recent)
+        {
+            <tr><td><a asp-action="Review" asp-route-id="@a.ApplicationId" style="text-decoration:none">@a.DisplayId</a></td><td>@(a.Learner?.ShortName ?? "Learner")</td><td>@Fmt.Date(a.DisplayDate)</td>
+                <td><span class="chip @Fmt.ChipClass(a.Status)">@a.Status</span></td></tr>
+        }
+        @if (!Model.Recent.Any()) { <tr><td colspan="4" class="empty">No applications have been submitted yet.</td></tr> }
+        </tbody>
+    </table>
+</div>

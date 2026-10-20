@@ -1,0 +1,17 @@
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Log out"; Layout = "_AuthLayout";
+    var isAdmin = User.FindFirstValue(ClaimTypes.Role) == StaffRoles.Administrator;
+}
+<div class="logout-wrap">
+    <div class="glass">
+        <div class="who"><img src="~/img/crest-brown.png" alt="" /><div>Phehello Secondary School<small>@(isAdmin ? "Admissions & Enrolment" : "Financial Management System")</small></div></div>
+        <div class="circle" aria-hidden="true">→</div>
+        <h1>Are you sure you want to log out?</h1>
+        <p>You will be redirected to the login page.</p>
+        <form method="post" asp-action="LogoutConfirmed">
+            <button type="submit" class="btn btn-brown">Yes, Log Out</button>
+        </form>
+        <a class="btn btn-white" href="@(isAdmin ? "/Admin/Dashboard" : "/Clerk/Dashboard")">Cancel</a>
+    </div>
+</div>

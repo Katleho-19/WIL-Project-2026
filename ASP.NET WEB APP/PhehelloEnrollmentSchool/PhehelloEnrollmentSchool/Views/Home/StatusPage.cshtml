@@ -1,0 +1,5 @@
+@model int
+@{ ViewData["Title"] = "Not found"; Layout = "_AuthLayout"; }
+<div class="card center-card"><h1>@(Model == 404 ? "Page not found" : "Error " + Model)</h1>
+<p class="subtitle" style="margin-top:10px">@(Model == 404 ? "That page or record does not exist." : "The request could not be completed.")</p>
+<p style="margin-top:18px"><a class="btn btn-brown" href="/">Back to the portal</a></p></div>
