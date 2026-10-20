@@ -1,0 +1,8 @@
+@* Application <select>. Changing it reloads the page for that application. Posts as "id". *@
+@model ApplicationPickerViewModel
+<select class="select" name="id" aria-label="Application" onchange="location.search='?id='+this.value">
+    @foreach (var a in Model.Choices)
+    {
+        <option value="@a.ApplicationId" selected="@(a.ApplicationId == Model.SelectedId)">@a.DisplayId — @(a.Learner?.NameWithoutMiddle ?? "Learner")</option>
+    }
+</select>

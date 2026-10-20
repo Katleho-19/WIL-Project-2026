@@ -1,0 +1,44 @@
+@model PaymentListViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["Nav"] = Model.Title;
+    var cols = Model.Mode == "verification" ? 6 : Model.Mode == "details" ? 6 : 5;
+}
+<div class="page-head">
+    <div><h1>@Model.Title</h1><p class="subtitle">@Model.Subtitle</p></div>
+    <a class="btn btn-gold" asp-action="@Model.Action" asp-all-route-data="@(new Dictionary<string,string?>{ ["Search"]=Model.Filters.Filter.Search, ["Status"]=Model.Filters.StatusLocked ? null : Model.Filters.Filter.Status, ["Year"]=Model.Filters.Filter.Year.ToString(), ["Page"]=Model.Filters.Filter.Page.ToString() })">Refresh</a>
+</div>
+<div class="card table-card">
+    <partial name="_Filters" model="Model.Filters" />
+    <table class="t">
+        <thead><tr>
+            <th>Application ID</th><th>Parent Name</th><th>Amount</th>
+            @if (Model.Mode == "verification") { <th>Proof of Payment</th><th>Status</th><th>Action</th> }
+            else if (Model.Mode == "details") { <th>Proof of Payment</th><th>Date</th><th>Status</th> }
+            else { <th>Date Verified</th><th>Status</th> }
+        </tr></thead>
+        <tbody>
+        @foreach (var p in Model.Items)
+        {
+            <tr>
+                    <td>@(p.Application?.DisplayId ?? "—")</td>
+                    <td class="@(Model.Mode == "verification" ? "" : "strong")">@(p.Application?.ParentName ?? "—")</td>
+                <td>@Fmt.Money(p.Amount)</td>
+                @if (Model.Mode != "verified")
+                {
+                    <td><a class="btn btn-outline btn-sm" href="/Clerk/ProofFile/@p.PaymentId" target="_blank" rel="noopener">View</a></td>
+                }
+                @if (Model.Mode == "details") { <td>@(p.CreatedAt?.LocalDateTime.ToString("yyyy-MM-dd"))</td> }
+                @if (Model.Mode == "verified") { <td>@(p.VerifiedAt?.LocalDateTime.ToString("yyyy-MM-dd"))</td> }
+                <td><span class="chip @Fmt.ChipClass(p.VerificationStatus)">@p.VerificationStatus</span></td>
+                @if (Model.Mode == "verification")
+                {
+                    <td><a class="btn btn-outline btn-sm" asp-action="Proof" asp-route-id="@p.PaymentId">@(p.VerificationStatus == PayStatus.Pending ? "Verify" : "View")</a></td>
+                }
+            </tr>
+        }
+        @if (!Model.Items.Any()) { <tr><td colspan="@cols" class="empty">No payments match.</td></tr> }
+        </tbody>
+    </table>
+    @if (Model.Pager != null) { <partial name="_Pager" model="Model.Pager" /> }
+</div>
