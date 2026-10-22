@@ -1,0 +1,24 @@
+@model FilterBar
+<form method="get" asp-controller="@Model.Controller" asp-action="@Model.Action" class="filters">
+    <input type="search" name="Search" value="@Model.Filter.Search" placeholder="⌕ @Model.SearchPlaceholder" aria-label="Search" />
+    @if (Model.StatusLocked)
+    {
+        <select name="Status" disabled aria-label="Status"><option>@Model.Filter.Status</option></select>
+    }
+    else
+    {
+        <select name="Status" aria-label="Status" onchange="this.form.submit()">
+            <option value="">Status ▾</option>
+            @foreach (var s in Model.StatusOptions)
+            {
+                <option value="@s" selected="@(Model.Filter.Status == s)">@s</option>
+            }
+        </select>
+    }
+    <select name="Year" aria-label="Academic year" onchange="this.form.submit()">
+        @foreach (var y in Model.Years)
+        {
+            <option value="@y" selected="@(Model.Filter.Year == y)">Academic Year: @y</option>
+        }
+    </select>
+</form>

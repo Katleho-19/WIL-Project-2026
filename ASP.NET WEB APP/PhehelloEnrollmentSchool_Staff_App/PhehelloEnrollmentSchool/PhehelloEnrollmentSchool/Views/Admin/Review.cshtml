@@ -1,0 +1,88 @@
+@model ReviewViewModel
+@{ ViewData["Title"] = "Application Review"; ViewData["Nav"] = "Review"; var a = Model.Application; }
+@if (a == null)
+{
+    <div class="page-head"><div><h1>Application Review</h1><p class="subtitle">Review submitted enrolment applications.</p></div></div>
+    <div class="card"><p class="empty" style="padding:30px">No application selected.</p></div>
+}
+else
+{
+    var payChip = Fmt.ChipClass(a.PaymentVerificationStatus);
+    <div class="page-head">
+        <div><h1>Application Review</h1><p class="crumb">@a.DisplayId • @(a.Learner?.NameWithoutMiddle ?? "Learner")</p></div>
+        <span class="chip lg @Fmt.ChipClass(a.Status)">@a.Status</span>
+    </div>
+
+    <form method="post" asp-action="Decide" id="decideForm">
+        <input type="hidden" name="id" value="@a.ApplicationId" />
+        <div class="grid-form" style="grid-template-columns:1.45fr 1fr">
+            <div class="card">
+                <h2>Learner &amp; Application Details</h2>
+                <div class="fields">
+                    <div class="field-box"><div class="k">First Name</div><div class="v">@a.Learner?.FirstName</div></div>
+                    <div class="field-box"><div class="k">Surname</div><div class="v">@a.Learner?.Surname</div></div>
+                    <div class="field-box"><div class="k">ID Number</div>
+                        <div class="v"><span id="idv" data-mask="@Fmt.Mask(a.Learner?.IdNumber)" data-full="@a.Learner?.IdNumber" data-shown="0">@Fmt.Mask(a.Learner?.IdNumber)</span>
+                        @if (!string.IsNullOrEmpty(a.Learner?.IdNumber)) { <button type="button" class="reveal" data-reveal="idv">Show</button> }</div></div>
+                    <div class="field-box"><div class="k">Date of Birth</div><div class="v">@(a.Learner?.DateOfBirth is { } dob ? Fmt.LongDate(dob.ToDateTime(TimeOnly.MinValue)) : "—")</div></div>
+                    <div class="field-box"><div class="k">Application Date</div><div class="v">@Fmt.Date(a.DisplayDate)</div></div>
+                    <div class="field-box"><div class="k">Payment Status</div><div class="v" style="color:@(payChip == "approved" ? "var(--green)" : payChip == "rejected" ? "var(--red)" : "#8a6a00")">@a.PaymentVerificationStatus</div></div>
+                    <div class="field-box"><div class="k">Grade Applied For</div><div class="v">@(a.GradeAppliedFor ?? "—")</div></div>
+                    <div class="field-box"><div class="k">Parent / Guardian</div><div class="v">@a.ParentName</div></div>
+                </div>
+
+                <h2>Documents</h2>
+                <table class="t">
+                    <thead><tr><th>Document</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                    @foreach (var d in Model.Documents)
+                    {
+                        <tr><td>@d.Name</td><td><span class="chip @d.Chip">@d.Status</span></td>
+                            <td>@if (d.ViewUrl != null) { <a class="btn btn-outline btn-sm" href="@d.ViewUrl" target="_blank" rel="noopener">View</a> } else { <span>—</span> }</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Application Progress</h2>
+                <div class="progress" aria-label="Step @Model.ProgressStep of 4">
+                    @for (var i = 1; i <= 4; i++) { <span class="@(i <= Model.ProgressStep ? "on" : "")"></span> }
+                </div>
+                <p class="note-text">@Model.ProgressText</p>
+
+                <h2 style="margin-top:8px">Administrator Notes</h2>
+                <textarea class="textarea" name="internalNote" placeholder="Enter internal review notes..." @(Model.CanDecide ? "" : "disabled")></textarea>
+
+                @if (Model.CanDecide)
+                {
+                    <div class="btn-row one-line">
+                        <button type="button" class="btn btn-gold btn-sm" data-decision="approve" disabled="@(!Model.CanApprove)" title="@Model.ApproveBlockedReason">Approve</button>
+                        <button type="button" class="btn btn-outline btn-sm" data-decision="corrections">Request Corrections</button>
+                        <button type="button" class="btn btn-red btn-sm" data-decision="reject">Reject Application</button>
+                    </div>
+                    @if (!Model.CanApprove) { <p class="note-text" style="margin-top:10px">@Model.ApproveBlockedReason</p> }
+                }
+                else if (Model.Application!.Status is AppStatus.Approved or AppStatus.Rejected)
+                {
+                    <div class="btn-row"><a class="btn btn-gold btn-sm" asp-action="ConfirmationLetters" asp-route-id="@a.ApplicationId">Generate Confirmation Letter</a></div>
+                }
+                <div class="btn-row" style="margin-top:10px">
+                    <a class="btn btn-outline btn-sm" asp-action="Notes" asp-route-id="@a.ApplicationId">Notes</a>
+                    <a class="btn btn-outline btn-sm" asp-action="Messaging" asp-route-id="@a.ApplicationId">Message Parent</a>
+                </div>
+            </div>
+        </div>
+
+        <dialog id="decisionDialog">
+            <h3 id="dlgTitle">Decision</h3>
+            <input type="hidden" name="decision" id="dlgDecision" />
+            <div id="dlgMessageWrap">
+                <label class="lbl" for="dlgMessage">Message to the parent</label>
+                <textarea class="textarea" name="message" id="dlgMessage" placeholder="Explain what needs to be corrected, or why the application was not successful."></textarea>
+            </div>
+            <div class="btn-row"><button type="submit" id="dlgConfirm" class="btn btn-brown">Confirm</button>
+                <button type="button" id="dlgCancel" class="btn btn-outline">Cancel</button></div>
+        </dialog>
+    </form>
+}

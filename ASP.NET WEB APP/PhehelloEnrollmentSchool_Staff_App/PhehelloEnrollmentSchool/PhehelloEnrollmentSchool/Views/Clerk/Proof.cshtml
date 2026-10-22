@@ -1,0 +1,63 @@
+@model ProofViewModel
+@{
+    ViewData["Title"] = "Proof of Payment"; ViewData["Nav"] = "Payment Verification";
+    var p = Model.Payment; var app = p.Application; var rec = Model.SchoolRecord;
+    var payDate = rec?.PaymentDate?.ToDateTime(TimeOnly.MinValue) ?? p.CreatedAt?.LocalDateTime.Date;
+}
+<div class="page-head">
+    <div><h1>Proof of Payment</h1><p class="crumb">Payment Verification / @app?.DisplayId</p></div>
+    <a class="btn btn-gold btn-sm" asp-action="PaymentVerification">← Back to Payment Verification</a>
+</div>
+<div class="card">
+    <div class="proof-grid">
+        <div>
+            <h2 class="bold">Uploaded Proof</h2>
+            <div class="proof-box">
+                @if (Model.IsImage) { <img src="/Clerk/ProofFile/@p.PaymentId" alt="Uploaded proof of payment" /> }
+                else if (Model.IsPdf) { <iframe src="/Clerk/ProofFile/@p.PaymentId" title="Uploaded proof of payment"></iframe> }
+                else { <div class="none">Preview not available.<br /><a href="/Clerk/ProofFile/@p.PaymentId" target="_blank" rel="noopener">Open the file</a></div> }
+            </div>
+            <div class="proof-cap">@(p.ProofFileName ?? "proof")</div>
+        </div>
+        <div>
+            <div class="proof-head"><h2 class="bold" style="margin:0">Payment Details</h2>
+                <span class="chip @Fmt.ChipClass(p.VerificationStatus)">@p.VerificationStatus</span></div>
+            <div class="kv"><span class="k">Application ID</span><span class="v">@(app?.DisplayId ?? "—")</span></div>
+            <div class="kv"><span class="k">Parent Name</span><span class="v">@(app?.ParentName ?? "—")</span></div>
+            <div class="kv"><span class="k">Amount Paid</span><span class="v">@Fmt.Money2(p.Amount)</span></div>
+            <div class="kv"><span class="k">Reference No.</span><span class="v">@(p.PaymentReference ?? "—")</span></div>
+            <div class="kv"><span class="k">Payment Date</span><span class="v">@(payDate is { } d ? Fmt.LongDate(d) : "—")</span></div>
+            <div class="kv"><span class="k">Bank</span><span class="v">@(rec?.PaymentMethod ?? "—")</span></div>
+            <div class="kv"><span class="k">Academic Year</span><span class="v">@(app?.DisplayDate.Year)</span></div>
+            <div class="kv">
+                <span class="k">School record</span>
+                @if (p.VerificationStatus == PayStatus.Verified)
+                {
+                    <span class="v good">Record Found</span>
+                }
+                else
+                {
+
+                    <span class="v bad">No matching record</span>
+                }
+            </div>
+
+            <form method="post" asp-action="Decide">
+                <input type="hidden" name="id" value="@p.PaymentId" />
+                <label class="dec-note" style="display:block" for="note">Decision note (required when rejecting)</label>
+                @if (Model.CanDecide)
+                {
+                    <textarea class="textarea" id="note" name="note" placeholder="e.g. Amount does not match school records..."></textarea>
+                    <div class="split">
+                        <button class="btn btn-reject" type="submit" name="decision" value="reject">✕ Reject</button>
+                        <button class="btn btn-green" type="submit" name="decision" value="approve" @(rec == null ? "data-confirm-unmatched" : "")>✓ Approve</button>
+                    </div>
+                }
+                else
+                {
+                    <textarea class="textarea" id="note" disabled>@p.VerificationNotes</textarea>
+                }
+            </form>
+        </div>
+    </div>
+</div>

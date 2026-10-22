@@ -1,0 +1,32 @@
+@model MessagingViewModel
+@{ ViewData["Title"] = "Message Parent"; ViewData["Nav"] = "Messaging"; var sel = Model.Picker.Selected; }
+<div class="page-head"><div><h1>Message Parent</h1><p class="subtitle">Communicate missing or incorrect documents.</p></div></div>
+@if (sel == null)
+{
+    <div class="card"><p class="empty" style="padding:30px">There are no applications yet.</p></div>
+}
+else
+{
+    <div class="grid-form">
+        <div class="card">
+            <h2>Recipient</h2>
+            <form method="post" asp-action="SendMessage">
+                <div class="field-box" style="margin-bottom:10px"><div class="k">Parent / Guardian</div><div class="v">@sel.ParentName</div></div>
+                <div class="field-box" style="margin-bottom:6px"><div class="k">Application</div>
+                    <div style="margin-top:4px"><partial name="_AppPicker" model="Model.Picker" /></div></div>
+                <label class="lbl" for="message">Message</label>
+                <textarea class="textarea" id="message" name="message" required placeholder="Please upload the missing or corrected document before the enrolment deadline."></textarea>
+                <div class="btn-row"><button class="btn btn-brown btn-sm" type="submit">Send Message</button></div>
+            </form>
+        </div>
+        <div class="card">
+            <h2>Recent Messages</h2>
+            @foreach (var m in Model.Recent)
+            {
+                <div class="note-item"><div class="when">@Fmt.DateTimeNote(m.CreatedAt) • Sent</div>
+                    <div class="who">@m.Title</div><div class="body">@m.Message</div></div>
+            }
+            @if (!Model.Recent.Any()) { <p class="note-text">No messages sent yet.</p> }
+        </div>
+    </div>
+}
