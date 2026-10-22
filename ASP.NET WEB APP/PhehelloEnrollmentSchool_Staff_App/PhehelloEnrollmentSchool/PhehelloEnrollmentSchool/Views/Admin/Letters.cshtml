@@ -1,5 +1,16 @@
+@*
+    Group Member's
+    Katleho Makhoali 224131387
+    Paballo Lebusa 221000537
+    Lerato Mahlatsi 220049867
+    David Adegbola 220042034
+    Mpho Motaung 224074632
+    Mamello Lepitla 222018199
+*@
 @model LetterViewModel
-@{ ViewData["Title"] = "Generate Confirmation Letter"; ViewData["Nav"] = "Confirmation Letters"; var sel = Model.Picker.Selected; var approved = sel?.Status == AppStatus.Approved; }
+@{
+    ViewData["Title"] = "Generate Confirmation Letter"; ViewData["Nav"] = "Confirmation Letters"; var sel = Model.Picker.Selected; var approved = sel?.Status == AppStatus.Approved;
+}
 <div class="page-head"><div><h1>Generate Confirmation Letter</h1><p class="subtitle">Create the official confirmation letter after an application is approved.</p></div></div>
 @if (sel == null)
 {
@@ -15,9 +26,16 @@ else
                     <div class="field-box"><div class="k">Application</div><div style="margin-top:3px"><partial name="_AppPicker" model="Model.Picker" /></div></div>
                     <div class="field-box"><div class="k">Status</div><div class="v" style="color:@(approved ? "var(--green)" : "var(--red)")">@sel.Status</div></div>
                     <div class="field-box"><div class="k">Learner Name</div><div class="v">@sel.Learner?.NameWithoutMiddle</div></div>
-                    <div class="field-box"><div class="k">Learner ID Number</div>
-                        <div class="v"><span id="idv" data-mask="@Fmt.Mask(Model.IdNumber)" data-full="@Model.IdNumber" data-shown="0">@Fmt.Mask(Model.IdNumber)</span>
-                        @if (!string.IsNullOrEmpty(Model.IdNumber)) { <button type="button" class="reveal" data-reveal="idv">Show</button> }</div></div>
+                    <div class="field-box">
+                        <div class="k">Learner ID Number</div>
+                        <div class="v">
+                            <span id="idv" data-mask="@Fmt.Mask(Model.IdNumber)" data-full="@Model.IdNumber" data-shown="0">@Fmt.Mask(Model.IdNumber)</span>
+                            @if (!string.IsNullOrEmpty(Model.IdNumber))
+                            {
+                                <button type="button" class="reveal" data-reveal="idv">Show</button>
+                            }
+                        </div>
+                    </div>
                     @if (approved)
                     {
                         <div class="field-box"><div class="k">Student Number</div><div class="v">@(Model.StudentNumber ?? "Assigned when generated")</div></div>
@@ -41,8 +59,14 @@ else
                 <div class="dear">Dear Parent / Guardian</div>
                 <div class="intro">@(approved ? "We are pleased to confirm the successful enrolment of:" : "We regret to inform you that the application for enrolment of:")</div>
                 <div class="lname">@sel.Learner?.NameWithoutMiddle</div>
-                @if (approved) { <div class="line">Student Number: @(Model.StudentNumber ?? "—")</div> }
-                @if (!string.IsNullOrEmpty(Model.IdNumber)) { <div class="line">ID Number: @Model.IdNumber</div> }
+                @if (approved)
+                {
+                    <div class="line">Student Number: @(Model.StudentNumber ?? "—")</div>
+                }
+                @if (!string.IsNullOrEmpty(Model.IdNumber))
+                {
+                    <div class="line">ID Number: @Model.IdNumber</div>
+                }
                 <div class="line">Application reference: @sel.DisplayId</div>
                 <div class="closing">@(approved ? "Please keep this letter safe. The student number above is unique to the learner and may be verified against the school's records." : "If you have any questions about this outcome, please contact the school office.")</div>
             </div>
