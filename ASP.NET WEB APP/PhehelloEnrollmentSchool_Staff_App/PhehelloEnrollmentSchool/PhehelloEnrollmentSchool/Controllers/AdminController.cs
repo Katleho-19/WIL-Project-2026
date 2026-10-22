@@ -169,7 +169,7 @@ namespace PhehelloEnrollmentSchool.Controllers
                 Name = "Proof of Payment",
                 Status = payment?.VerificationStatus ?? "Missing",
                 Chip = payment == null ? "pending" : Fmt.ChipClass(payment.VerificationStatus),
-                ViewUrl = payment?.ProofStoragePath == null ? null : $"/Admin/ProofFile/{payment.PaymentId}"
+                ViewUrl = null
             });
 
             var paymentVerified = app.PaymentVerificationStatus == PayStatus.Verified;
@@ -468,12 +468,7 @@ namespace PhehelloEnrollmentSchool.Controllers
             return await Stream(doc.StoragePath, doc.FileName ?? "document", ct);
         }
 
-        public async Task<IActionResult> ProofFile(Guid id, [FromServices] IPaymentRepository payments, CancellationToken ct)
-        {
-            var payment = await payments.GetAsync(id, ct);
-            if (payment?.ProofStoragePath == null) return NotFound();
-            return await Stream(payment.ProofStoragePath, payment.ProofFileName ?? "proof", ct);
-        }
+       
 
         private async Task<IActionResult> Stream(string path, string fileName, CancellationToken ct)
         {
