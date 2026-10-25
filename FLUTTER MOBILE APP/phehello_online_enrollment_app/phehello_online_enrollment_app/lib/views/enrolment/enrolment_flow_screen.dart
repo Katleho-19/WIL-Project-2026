@@ -1,3 +1,11 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: enrolment_flow_screen.dart defines the six-step enrolment wizard screen: the header with
+// "Save & Close", the step progress bar, the current step, and the back / leave / save-draft behaviour.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,16 +23,22 @@ import 'medical_step.dart';
 import 'payment_info_step.dart';
 import 'proof_of_payment_step.dart';
 
+/// EnrolmentFlowScreen (class) - hosts the six steps. Back works at every step; leaving from the first step (or using the app tabs) asks whether to save a draft.
+/// All wizard state is in EnrolmentFlowViewModel, which is provided by RouteManager.
 /// Six-step enrolment wizard. Back works at every step; leaving the first
 /// step (or the app tabs) asks whether to save a draft.
 class EnrolmentFlowScreen extends StatefulWidget {
+  /// Constructor - no required parameters.
   const EnrolmentFlowScreen({super.key});
 
+  /// createState() - creates the State object _EnrolmentFlowScreenState.
   @override
   State<EnrolmentFlowScreen> createState() => _EnrolmentFlowScreenState();
 }
 
+/// _EnrolmentFlowScreenState (class) - contains the wizard's navigation and leave logic.
 class _EnrolmentFlowScreenState extends State<EnrolmentFlowScreen> {
+  /// initState() - if a saved draft was restored, shows a snack bar after the first frame: the saved answers were restored but the documents must be attached again.
   @override
   void initState() {
     super.initState();
@@ -43,6 +57,8 @@ class _EnrolmentFlowScreenState extends State<EnrolmentFlowScreen> {
     }
   }
 
+  /// _confirmLeave() - returns true if the parent may leave. If there is nothing to lose it returns true at once; otherwise it asks "Leave this application?"
+  /// with three choices: Keep editing (stay), Discard (delete the draft and leave) and Save draft & exit (save and leave).
   Future<bool> _confirmLeave() async {
     final flow = context.read<EnrolmentFlowViewModel>();
     if (!flow.hasUnsavedWork) return true;
@@ -83,6 +99,8 @@ class _EnrolmentFlowScreenState extends State<EnrolmentFlowScreen> {
     return false;
   }
 
+  /// _saveAndClose() - the "Save & Close" button, available on every step with no validation. It does nothing while a submission is running; otherwise it saves the draft,
+  /// closes the wizard and shows a snack bar explaining how to continue from the home screen.
   /// "Save & Close" - available on every step. Needs no validation: it stores
   /// whatever has been entered plus the current step, then returns to the
   /// dashboard where the draft shows a "Continue Application" button.
@@ -103,6 +121,7 @@ class _EnrolmentFlowScreenState extends State<EnrolmentFlowScreen> {
     );
   }
 
+  /// _handleBack() - ignores back while submitting; on steps after the first it goes to the previous step; on the first step it asks _confirmLeave() and closes the wizard if allowed.
   Future<void> _handleBack() async {
     final flow = context.read<EnrolmentFlowViewModel>();
     if (flow.submitState == SubmitState.submitting) return;
@@ -114,6 +133,7 @@ class _EnrolmentFlowScreenState extends State<EnrolmentFlowScreen> {
     if (leave && mounted) Navigator.of(context).pop();
   }
 
+  /// _tabTapped() - used by the bottom navigation on the last two steps: after _confirmLeave() allows it, closes the wizard and selects the tapped tab (reloading applications for tab 1).
   Future<void> _tabTapped(int index) async {
     final leave = await _confirmLeave();
     if (!leave || !mounted) return;
@@ -123,6 +143,8 @@ class _EnrolmentFlowScreenState extends State<EnrolmentFlowScreen> {
     if (index == 1) context.read<ApplicationsViewModel>().load();
   }
 
+  /// build() - lists the six step widgets and shows the current one inside a PopScope (so the system back button runs _handleBack). The page has the "Application" header (step title and
+  /// "X of 6", back button and a "Save & Close" button disabled during submission), the StepProgress indicator and the current step with a short fade animation. From step 5 onward it also shows the bottom navigation bar.
   @override
   Widget build(BuildContext context) {
     final flow = context.watch<EnrolmentFlowViewModel>();

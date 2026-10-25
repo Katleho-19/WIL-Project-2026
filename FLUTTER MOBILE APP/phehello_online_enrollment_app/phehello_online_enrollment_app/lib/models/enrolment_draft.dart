@@ -3,10 +3,17 @@
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
 
+// FILE PURPOSE: enrolment_draft.dart defines EnrolmentDraft, the set of text answers a parent has
+// typed into the six-step enrolment wizard. It can be turned into JSON text so an unfinished
+// application can be saved on the device ("Save & close") and restored later.
+
 import 'dart:convert';
 
 /// Text answers collected by the six-step enrolment wizard.
 /// (Files are kept separately in memory.) Saved locally as a draft.
+///
+/// EnrolmentDraft (class) - a mutable bag of form answers; each field starts empty and is
+/// filled in as the parent completes the steps.
 class EnrolmentDraft {
   // Step 1 - learner
   String firstName = '';
@@ -47,14 +54,20 @@ class EnrolmentDraft {
   int step = 0;
   DateTime? savedAt;
 
+  /// learnerName (getter) - the learner's first name and surname joined together and trimmed;
+  /// used to label the saved draft.
   String get learnerName => '$firstName $surname'.trim();
 
+  /// isEmpty (getter) - true if the key fields (first name, surname, grade, guardian name) are all
+  /// empty, meaning there is nothing worth saving as a draft.
   bool get isEmpty =>
       firstName.isEmpty &&
       surname.isEmpty &&
       gradeApplied.isEmpty &&
       guardianName.isEmpty;
 
+  /// toJson() - converts every answer (plus the current step and save time) into a Map that can
+  /// be turned into JSON. Dates are written as ISO-8601 text.
   Map<String, dynamic> toJson() => {
     'firstName': firstName,
     'middleName': middleName,
@@ -85,8 +98,13 @@ class EnrolmentDraft {
     'savedAt': savedAt?.toIso8601String(),
   };
 
+  /// encode() - turns the draft into a single JSON string so it can be stored on the device.
   String encode() => jsonEncode(toJson());
 
+  /// decode() - rebuilds an EnrolmentDraft from a saved JSON string.
+  /// A small inner helper s() reads a text value (or '' if missing); dates are parsed back
+  /// with DateTime.tryParse and the step number is read as an int (default 0).
+  /// If the stored text is corrupt, the error is ignored and a fresh draft is returned.
   static EnrolmentDraft decode(String source) {
     final d = EnrolmentDraft();
     try {

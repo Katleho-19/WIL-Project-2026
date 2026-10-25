@@ -1,3 +1,12 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: notifications_screen.dart defines the Alerts tab (FR10, FR11): a list of staff messages,
+// reminders and application status updates, split into two tabs, with unread markers, "Mark all read", and a
+// dialog to read each message in full.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,18 +19,27 @@ import '../widgets/app_card.dart';
 import '../widgets/app_header.dart';
 import '../widgets/state_views.dart';
 
+/// NotificationsScreen (class) - the Alerts tab of the main shell. It is stateful because it remembers which of the two tabs is selected.
 /// Messages & Notifications (FR10, FR11): staff messages, reminders and
 /// application status updates delivered through Supabase.
 class NotificationsScreen extends StatefulWidget {
+  /// Constructor - no required parameters.
   const NotificationsScreen({super.key});
 
+  /// createState() - creates the State object _NotificationsScreenState.
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
+/// _NotificationsScreenState (class) - holds the selected tab and builds the screen.
 class _NotificationsScreenState extends State<NotificationsScreen> {
+  /// _tab - the selected tab: 0 = Messages, 1 = Notifications.
   int _tab = 0; // 0 = Messages, 1 = Notifications
 
+  /// build() - watches NotificationsViewModel and picks the list for the selected tab (messages or updates). It chooses
+  /// the body: a loader on first load; an error message with a retry button; an empty-state message if the tab has no items;
+  /// otherwise a pull-to-refresh list of _NotificationCard widgets. It then draws the "Messages & Notifications" header (with a red
+  /// unread-count badge when there are unread items), the two _Tab pills, a "Mark all read" button (only when there are unread items) and the body.
   @override
   Widget build(BuildContext context) {
     final p = context.watch<NotificationsViewModel>();
@@ -114,7 +132,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 }
 
+/// _Tab (class) - one pill-shaped tab button; brown and white text when selected, light tile and brown text when not.
 class _Tab extends StatelessWidget {
+  /// Constructor - label, selected and onTap are all required.
   const _Tab({
     required this.label,
     required this.selected,
@@ -125,6 +145,7 @@ class _Tab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  /// build() - a tappable rounded container showing the label; its colours depend on 'selected'.
   @override
   Widget build(BuildContext context) => InkWell(
     borderRadius: BorderRadius.circular(20),
@@ -149,11 +170,15 @@ class _Tab extends StatelessWidget {
   );
 }
 
+/// _NotificationCard (class) - the card for one notification or message.
 class _NotificationCard extends StatelessWidget {
+  /// Constructor - the AppNotification is required.
   const _NotificationCard({required this.item});
 
   final AppNotification item;
 
+  /// _showMessage() - opens a dialog with the full title and message. If the notification is linked to an application it also
+  /// offers a "View application" button that opens that application's details; "Close" dismisses the dialog.
   void _showMessage(BuildContext context) {
     final appId = item.applicationId;
     showDialog<void>(
@@ -179,6 +204,8 @@ class _NotificationCard extends StatelessWidget {
     );
   }
 
+  /// build() - a card that, when tapped, marks the notification as read and shows the full message dialog. It shows the title,
+  /// the date/time label, a gold dot if unread (or a chevron if read and linked to an application), a divider and the message text.
   @override
   Widget build(BuildContext context) {
     return AppCard(

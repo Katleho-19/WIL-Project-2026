@@ -3,6 +3,10 @@
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
 
+// FILE PURPOSE: application_details_screen.dart defines the Application Details screen (FR5): the current
+// status and payment status, learner summary, documents list with their statuses, and the parent's actions
+// (replace documents, resubmit for review, upload a new proof of payment, view full details, delete).
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,15 +27,19 @@ import '../widgets/state_views.dart';
 import '../widgets/status_chip.dart';
 import 'confirmation_letter_dialog.dart';
 
+/// ApplicationDetailsScreen (class) - the public entry of the screen. Status always comes from the database and is re-fetched when this screen opens.
+/// It only shows what ApplicationDetailsViewModel provides and passes taps back to it.
 /// Application Details / Application Status (FR5). Status always comes from
 /// the database and is re-fetched when this screen opens.
 ///
 /// The View only renders [ApplicationDetailsViewModel] and forwards taps to it.
 class ApplicationDetailsScreen extends StatelessWidget {
+  /// Constructor - the id of the application to show is required.
   const ApplicationDetailsScreen({super.key, required this.applicationId});
 
   final String applicationId;
 
+  /// build() - provides a new ApplicationDetailsViewModel (and immediately calls refresh() on it) and shows _ApplicationDetailsView.
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ApplicationDetailsViewModel>(
@@ -47,11 +55,14 @@ class ApplicationDetailsScreen extends StatelessWidget {
   }
 }
 
+/// _ApplicationDetailsView (class) - the actual screen content (private to this file).
 class _ApplicationDetailsView extends StatelessWidget {
+  /// Constructor - the application id is required.
   const _ApplicationDetailsView({required this.applicationId});
 
   final String applicationId;
 
+  /// _replaceDocument() - asks the view model to let the parent pick and upload a new file for a document type, then shows the returned message in a snack bar.
   Future<void> _replaceDocument(
     BuildContext context,
     ApplicationDetailsViewModel vm,
@@ -63,6 +74,7 @@ class _ApplicationDetailsView extends StatelessWidget {
       messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// _resubmit() - sends the corrected application back to the school for review and shows the result message.
   Future<void> _resubmit(
     BuildContext context,
     ApplicationDetailsViewModel vm,
@@ -72,6 +84,7 @@ class _ApplicationDetailsView extends StatelessWidget {
     messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// _reuploadProof() - opens the re-upload proof sheet; if a new proof was submitted it refreshes the application and shows a confirmation message.
   Future<void> _reuploadProof(
     BuildContext context,
     ApplicationDetailsViewModel vm,
@@ -87,6 +100,8 @@ class _ApplicationDetailsView extends StatelessWidget {
     }
   }
 
+  /// _delete() - asks "Delete application?" in a dialog explaining that everything will be permanently removed. If confirmed it asks the view
+  /// model to delete; on an error it shows the message, on success it closes the screen and shows "Application deleted."
   Future<void> _delete(
     BuildContext context,
     ApplicationDetailsViewModel vm,
@@ -130,6 +145,8 @@ class _ApplicationDetailsView extends StatelessWidget {
     );
   }
 
+  /// build() - watches the view model and the application. The first time a letter is available it schedules the confirmation letter dialog to open after
+  /// the frame is drawn (approved or not). It then draws the header (with the reference number and a back button), a thin progress bar while refreshing and the body.
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ApplicationDetailsViewModel>();
@@ -164,6 +181,11 @@ class _ApplicationDetailsView extends StatelessWidget {
     );
   }
 
+  /// _body() - builds the main content. It shows a loader if the application was deleted or is still loading, or an error with a retry button if it could not be loaded.
+  /// Otherwise it shows a pull-to-refresh list containing: the brown status banner with the payment status chip; the Learner Information card (ID masked);
+  /// a "Corrections needed" card with a Resubmit button (only when corrections were requested); the Documents list (each document with a Received/Missing chip and a Replace
+  /// button while corrections are requested); the Proof of Payment row (reference, amount and the school's note if rejected); an "Upload New Proof of Payment" button
+  /// (if the payment was rejected and the application is not final); and the "View Full Details" and "Delete Application" buttons.
   Widget _body(
     BuildContext context,
     ApplicationDetailsViewModel vm,
@@ -363,12 +385,15 @@ class _ApplicationDetailsView extends StatelessWidget {
   }
 }
 
+/// _InfoLine (class) - one line of text in the form 'Label: value', with a muted label and a bold value.
 class _InfoLine extends StatelessWidget {
+  /// Constructor - label and value are positional parameters.
   const _InfoLine(this.label, this.value);
 
   final String label;
   final String value;
 
+  /// build() - a padded rich-text line combining the muted label and the bold value.
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 3),
@@ -390,7 +415,10 @@ class _InfoLine extends StatelessWidget {
   );
 }
 
+/// _DocumentRow (class) - one row of the documents list: title, subtitle, optional extra text, a status chip on the right and an optional
+/// Replace button (shown only if onReplace is provided).
 class _DocumentRow extends StatelessWidget {
+  /// Constructor - title, subtitle and chip are required; extra and onReplace are optional.
   const _DocumentRow({
     required this.title,
     required this.subtitle,
@@ -405,6 +433,7 @@ class _DocumentRow extends StatelessWidget {
   final Widget chip;
   final VoidCallback? onReplace;
 
+  /// build() - a row with a bottom border: the text column on the left (title, subtitle, extra) and the chip with the optional Replace button on the right.
   @override
   Widget build(BuildContext context) {
     return Container(

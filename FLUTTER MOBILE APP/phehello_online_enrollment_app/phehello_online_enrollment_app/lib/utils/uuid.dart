@@ -3,9 +3,18 @@
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
 
+// FILE PURPOSE: uuid.dart provides a small function that generates random unique identifiers
+// (UUID version 4), used to give uploaded files and records unique names.
+
 import 'dart:math';
 
 /// Minimal RFC 4122 version-4 UUID generator.
+///
+/// generateUuidV4() - creates a random UUID such as "3f2b8c1e-...-9a4d".
+/// Steps: (1) get a cryptographically secure random generator; (2) fill 16 random bytes;
+/// (3) set the version bits (byte 6 becomes 0x4_) and the variant bits (byte 8 becomes 0b10______)
+/// as the UUID v4 standard requires; (4) h() converts one byte to two hex characters;
+/// (5) join the bytes in the 8-4-4-4-12 pattern separated by hyphens.
 String generateUuidV4() {
   final r = Random.secure();
   final b = List<int>.generate(16, (_) => r.nextInt(256));

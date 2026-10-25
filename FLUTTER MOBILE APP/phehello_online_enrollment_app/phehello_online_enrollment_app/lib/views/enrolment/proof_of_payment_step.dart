@@ -1,3 +1,11 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: proof_of_payment_step.dart defines Step 6 (the last step) of the enrolment wizard (FR4, FR2):
+// the parent enters the payment reference and amount, chooses the proof of payment file, reviews everything and submits the application with a progress dialog.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,18 +19,26 @@ import '../widgets/form_fields.dart';
 import '../widgets/upload_widgets.dart';
 import 'step_scaffold.dart';
 
+/// ProofOfPaymentStep (class) - Step 6, Proof of Payment and Submit Application.
 /// Step 6 - Proof of Payment, review and Submit Application (FR4, FR2).
 class ProofOfPaymentStep extends StatefulWidget {
+  /// Constructor - no required parameters.
   const ProofOfPaymentStep({super.key});
 
+  /// createState() - creates the State object _ProofOfPaymentStepState.
   @override
   State<ProofOfPaymentStep> createState() => _ProofOfPaymentStepState();
 }
 
+/// _ProofOfPaymentStepState (class) - holds the form key and whether to show the missing-file error.
 class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
+  /// _formKey - lets the step validate the reference and amount.
   final _formKey = GlobalKey<FormState>();
+
+  /// _fileError - true when the parent tried to submit without choosing a proof file.
   bool _fileError = false;
 
+  /// _choose() - asks the view model to let the parent pick the proof file; shows any error in a snack bar and clears the file error once a file is chosen.
   Future<void> _choose() async {
     final flow = context.read<EnrolmentFlowViewModel>();
     final messenger = ScaffoldMessenger.of(context);
@@ -34,16 +50,24 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
     }
   }
 
+  /// _submit() - the Submit Application button. It validates the form, flags a missing proof file, and checks that all required documents from Step 4 are present
+  /// (otherwise it asks the parent to go back). It then shows the review sheet; if the parent confirms it opens a non-dismissable progress dialog, calls
+  /// EnrolmentFlowViewModel.submit() and closes the dialog. On success it opens the success screen with the reference number; on failure it shows a "Submission failed" dialog with
+  /// the message and resets the submit state so the parent can try again.
   Future<void> _submit() async {
     final flow = context.read<EnrolmentFlowViewModel>();
     final valid = _formKey.currentState!.validate();
     if (flow.proof == null) setState(() => _fileError = true);
     if (!valid || flow.proof == null) return;
     if (flow.missingRequiredDocuments.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Please go back and upload: '
-            '${flow.missingRequiredDocuments.map((e) => e.label).join(', ')}.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please go back and upload: '
+            '${flow.missingRequiredDocuments.map((e) => e.label).join(', ')}.',
+          ),
+        ),
+      );
       return;
     }
     final confirmed = await _showReview(flow);
@@ -71,7 +95,9 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: const Text('Submission failed'),
-          content: Text(flow.errorMessage ?? 'Something went wrong. Please try again.'),
+          content: Text(
+            flow.errorMessage ?? 'Something went wrong. Please try again.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -84,6 +110,8 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
     }
   }
 
+  /// _showReview() - shows the "Review your application" bottom sheet listing the learner, grade, guardian, contact, documents, payment reference, amount and proof file name,
+  /// with "Confirm & Submit" (returns true) and "Go back" (returns false) buttons.
   Future<bool?> _showReview(EnrolmentFlowViewModel flow) {
     final d = flow.draft;
     final docs = flow.documents.keys.map((e) => e.label).join(', ');
@@ -92,7 +120,8 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
       isScrollControlled: true,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
@@ -100,11 +129,15 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Review your application',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+              const Text(
+                'Review your application',
+                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+              ),
               const SizedBox(height: 4),
-              const Text('Please check the details below before you submit.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+              const Text(
+                'Please check the details below before you submit.',
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+              ),
               const SizedBox(height: 14),
               _ReviewLine('Learner', '${d.firstName} ${d.surname}'.trim()),
               _ReviewLine('Grade applied for', d.gradeApplied),
@@ -112,14 +145,21 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
               _ReviewLine('Contact', d.guardianPhone),
               _ReviewLine('Documents', docs.isEmpty ? '-' : docs),
               _ReviewLine('Payment reference', d.paymentReference),
-              _ReviewLine('Amount paid',
-                  Formatters.money(Validators.parseAmount(d.amountPaid) ?? 0)),
+              _ReviewLine(
+                'Amount paid',
+                Formatters.money(Validators.parseAmount(d.amountPaid) ?? 0),
+              ),
               _ReviewLine('Proof of payment', flow.proof?.name ?? '-'),
               const SizedBox(height: 16),
               PrimaryButton(
-                  label: 'Confirm & Submit', onPressed: () => Navigator.pop(ctx, true)),
+                label: 'Confirm & Submit',
+                onPressed: () => Navigator.pop(ctx, true),
+              ),
               const SizedBox(height: 10),
-              OutlineBrandButton(label: 'Go back', onPressed: () => Navigator.pop(ctx, false)),
+              OutlineBrandButton(
+                label: 'Go back',
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
             ],
           ),
         ),
@@ -127,6 +167,8 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
     );
   }
 
+  /// build() - shows the payment reference* and amount paid* fields, then either the upload drop zone (with a red message if the file is missing) or the chosen file card with
+  /// Replace and Remove buttons, the "Submit Application" button and a tip box about a clear proof of payment.
   @override
   Widget build(BuildContext context) {
     final flow = context.watch<EnrolmentFlowViewModel>();
@@ -159,8 +201,10 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
             if (_fileError)
               const Padding(
                 padding: EdgeInsets.only(top: 6),
-                child: Text('Please choose your proof of payment.',
-                    style: TextStyle(color: AppColors.error, fontSize: 12.5)),
+                child: Text(
+                  'Please choose your proof of payment.',
+                  style: TextStyle(color: AppColors.error, fontSize: 12.5),
+                ),
               ),
           ] else ...[
             SelectedFileCard(file: proof, onRemove: flow.removeProof),
@@ -169,14 +213,18 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
               children: [
                 Expanded(
                   child: OutlineBrandButton(
-                      label: 'Replace', icon: Icons.refresh_rounded, onPressed: _choose),
+                    label: 'Replace',
+                    icon: Icons.refresh_rounded,
+                    onPressed: _choose,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlineBrandButton(
-                      label: 'Remove',
-                      icon: Icons.delete_outline_rounded,
-                      onPressed: flow.removeProof),
+                    label: 'Remove',
+                    icon: Icons.delete_outline_rounded,
+                    onPressed: flow.removeProof,
+                  ),
                 ),
               ],
             ),
@@ -191,14 +239,18 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text.rich(
-              TextSpan(children: [
-                TextSpan(
+              TextSpan(
+                children: [
+                  TextSpan(
                     text: 'Before submitting: ',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
-                TextSpan(
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  TextSpan(
                     text:
-                        'Check your proof of payment is clear and shows the payment reference and date.'),
-              ]),
+                        'Check your proof of payment is clear and shows the payment reference and date.',
+                  ),
+                ],
+              ),
               style: TextStyle(fontSize: 12.5, height: 1.35),
             ),
           ),
@@ -208,35 +260,48 @@ class _ProofOfPaymentStepState extends State<ProofOfPaymentStep> {
   }
 }
 
+/// _ReviewLine (class) - one label/value line in the review sheet; an empty value is shown as a dash.
 class _ReviewLine extends StatelessWidget {
+  /// Constructor - label and value are positional parameters.
   const _ReviewLine(this.label, this.value);
 
   final String label;
   final String value;
 
+  /// build() - a row with the muted label on the left and the bold, right-aligned value on the right.
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-                flex: 4,
-                child: Text(label,
-                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted))),
-            Expanded(
-                flex: 6,
-                child: Text(value.isEmpty ? '-' : value,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 4,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+          ),
         ),
-      );
+        Expanded(
+          flex: 6,
+          child: Text(
+            value.isEmpty ? '-' : value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
+/// _ProgressDialog (class) - the dialog shown while the application uploads and saves.
 class _ProgressDialog extends StatelessWidget {
+  /// Constructor - no parameters.
   const _ProgressDialog();
 
+  /// build() - watches EnrolmentFlowViewModel and shows the "Submitting application" title, a progress bar (animated until a real value exists), the current progress message
+  /// and a reminder to keep the app open.
   @override
   Widget build(BuildContext context) {
     final flow = context.watch<EnrolmentFlowViewModel>();
@@ -246,12 +311,17 @@ class _ProgressDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LinearProgressIndicator(value: flow.progress == 0 ? null : flow.progress, minHeight: 6),
+          LinearProgressIndicator(
+            value: flow.progress == 0 ? null : flow.progress,
+            minHeight: 6,
+          ),
           const SizedBox(height: 14),
           Text(flow.progressMessage, style: const TextStyle(fontSize: 13.5)),
           const SizedBox(height: 6),
-          const Text('Please keep the app open.',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          const Text(
+            'Please keep the app open.',
+            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+          ),
         ],
       ),
     );

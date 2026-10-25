@@ -3,17 +3,30 @@
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
 
+// FILE PURPOSE: enums.dart holds the fixed sets of values used across the app: the application
+// status, the payment verification status, the required document types and the notification
+// types. Keeping them here means the status text is never scattered through the UI.
+
 /// Application status vocabulary (SRS sequence diagrams / wireframes).
 /// All status strings live here so they are never scattered through the UI.
+///
+/// ApplicationStatus (enum) - the four stages an enrolment application can be in.
+/// Each value carries dbValue, the exact text stored in the database.
 enum ApplicationStatus {
   pendingAdminReview('Pending Admin Review'),
   correctionsRequested('Corrections Requested'),
   approved('Approved'),
   rejected('Rejected');
 
+  /// Constructor - stores the database text for each enum value.
   const ApplicationStatus(this.dbValue);
+
+  /// dbValue - the status text exactly as stored in the database.
   final String dbValue;
 
+  /// fromDb() - converts the raw status text from the database into an ApplicationStatus.
+  /// The text is trimmed and lower-cased so small spelling/casing differences still match;
+  /// anything unknown (or null) falls back to pendingAdminReview.
   static ApplicationStatus fromDb(String? raw) {
     final v = (raw ?? '').trim().toLowerCase();
     switch (v) {
@@ -30,6 +43,8 @@ enum ApplicationStatus {
     }
   }
 
+  /// chipLabel (getter) - the short label shown on the coloured status chip
+  /// ("Pending", "Corrections", "Approved", "Rejected").
   /// Short label for chips ("Pending", "Approved", "Rejected").
   String get chipLabel {
     switch (this) {
@@ -44,6 +59,8 @@ enum ApplicationStatus {
     }
   }
 
+  /// bannerDescription (getter) - the friendly sentence shown in the status banner on the
+  /// application details screen, explaining what the status means for the parent.
   String get bannerDescription {
     switch (this) {
       case ApplicationStatus.pendingAdminReview:
@@ -58,6 +75,7 @@ enum ApplicationStatus {
     }
   }
 
+  /// isPendingGroup (getter) - true for pending and corrections-requested applications.
   /// "Pending" tab on My Applications groups pending + corrections.
   bool get isPendingGroup =>
       this == ApplicationStatus.pendingAdminReview ||
@@ -65,14 +83,21 @@ enum ApplicationStatus {
 }
 
 /// Verification status of a proof-of-payment record.
+///
+/// PaymentVerificationStatus (enum) - whether the Financial Clerk has checked the parent's proof of payment.
 enum PaymentVerificationStatus {
   pending('Pending'),
   verified('Verified'),
   rejected('Rejected');
 
+  /// Constructor - stores the database text for each value.
   const PaymentVerificationStatus(this.dbValue);
+
+  /// dbValue - the status text exactly as stored in the database.
   final String dbValue;
 
+  /// fromDb() - converts database text to a PaymentVerificationStatus;
+  /// "verified" and "rejected" are matched (ignoring case), everything else becomes pending.
   static PaymentVerificationStatus fromDb(String? raw) {
     final v = (raw ?? '').trim().toLowerCase();
     if (v == 'verified') return PaymentVerificationStatus.verified;
@@ -80,8 +105,10 @@ enum PaymentVerificationStatus {
     return PaymentVerificationStatus.pending;
   }
 
+  /// chipLabel (getter) - the label for the status chip (same as the database text).
   String get chipLabel => dbValue;
 
+  /// parentLabel (getter) - the wording used on parent-facing screens for each payment status.
   /// Text used on the parent-facing screens.
   String get parentLabel {
     switch (this) {
@@ -94,6 +121,8 @@ enum PaymentVerificationStatus {
     }
   }
 
+  /// documentSubtitle (getter) - the small subtitle shown under the proof-of-payment entry
+  /// in the documents list.
   String get documentSubtitle {
     switch (this) {
       case PaymentVerificationStatus.pending:
@@ -107,6 +136,9 @@ enum PaymentVerificationStatus {
 }
 
 /// Supporting documents required by the school's enrolment form (FR3).
+///
+/// DocumentType (enum) - the kinds of supporting documents a parent uploads.
+/// Each one has a display label, a hint, and whether it is compulsory.
 enum DocumentType {
   birthCertificate(
     label: 'Birth Certificate',
@@ -129,19 +161,25 @@ enum DocumentType {
     isRequired: false,
   );
 
+  /// Constructor - assigns the label, hint and required flag to each document type.
   const DocumentType({
     required this.label,
     required this.hint,
     required this.isRequired,
   });
 
+  /// label - the name shown to the parent.
   final String label;
+
+  /// hint - short helper text shown under the label (e.g. "Required", "If applicable").
   final String hint;
+
+  /// isRequired - true if the application cannot be submitted without this document.
   final bool isRequired;
 
-  /// Value stored in application_documents.document_type.
-
-  /// Value stored in application_documents.document_type.
+  /// dbValue (getter) - the text stored in application_documents.document_type.
+  /// It equals the label, except the progress report which is stored as
+  /// "Previous School Progress Report".
   String get dbValue {
     switch (this) {
       case DocumentType.progressReport:
@@ -151,6 +189,8 @@ enum DocumentType {
     }
   }
 
+  /// fromDb() - converts stored document-type text back into a DocumentType by matching
+  /// either dbValue or label (ignoring case). Returns null if nothing matches.
   static DocumentType? fromDb(String? raw) {
     final v = (raw ?? '').trim().toLowerCase();
     for (final t in DocumentType.values) {
@@ -161,10 +201,14 @@ enum DocumentType {
 }
 
 /// notifications.notification_type values.
+///
+/// NotificationType (class) - string constants for the kinds of notification stored in the database.
+/// The private constructor prevents creating instances; use NotificationType.message etc.
 class NotificationType {
   NotificationType._();
-  static const String message = 'message';
-  static const String reminder = 'reminder';
-  static const String statusUpdate = 'status_update';
-  static const String system = 'system';
+  static const String message = 'message'; // a direct message from school staff
+  static const String reminder = 'reminder'; // a reminder to the parent
+  static const String statusUpdate =
+      'status_update'; // an application status change
+  static const String system = 'system'; // an automatic system message
 }
