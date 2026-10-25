@@ -1,0 +1,58 @@
+@using System.Security.Claims
+@{
+    var role = User.FindFirstValue(ClaimTypes.Role);
+    var isAdmin = role == StaffRoles.Administrator;
+    var active = ViewData["Nav"] as string ?? "";
+    var sub = ViewData["SidebarSub"] as string ?? "Admissions & Enrolment";
+
+    var items = isAdmin
+        ? new[] {
+            ("Dashboard","Admin","Dashboard"), ("Applications","Admin","Applications"), ("Approved","Admin","Approved"),
+            ("Rejected","Admin","Rejected"), ("Pending","Admin","Pending"), ("Review","Admin","Review"),
+            ("Notes","Admin","Notes"), ("Messaging","Admin","Messaging"), ("Reminders","Admin","Reminders"),
+            ("Confirmation Letters","Admin","ConfirmationLetters") }
+        : new[] {
+            ("Dashboard","Clerk","Dashboard"), ("Payment Verification","Clerk","PaymentVerification"),
+            ("Payment Details","Clerk","PaymentDetails"), ("Verified Payments","Clerk","VerifiedPayments") };
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Phehello Secondary School</title>
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <img src="~/img/crest-sm.png" alt="School crest" />
+            <div><div class="name">Phehello Secondary School</div><div class="sub">@sub</div></div>
+        </div>
+        <nav class="nav" aria-label="Main">
+            @foreach (var (label, controller, action) in items)
+            {
+                <a asp-controller="@controller" asp-action="@action" class="@(active == label ? "active" : "")">@label</a>
+            }
+            @if (!isAdmin) { <div class="gap"></div> }
+            <a asp-controller="Account" asp-action="Logout" class="@(active == "Logout" ? "active" : "")">@(isAdmin ? "LOGOUT" : "LOGOUT")</a>
+        </nav>
+        <div class="side-foot"><strong>@role</strong>Authorized staff account</div>
+    </aside>
+    <main class="main">
+        @if (TempData["Success"] is string ok) { <div class="flash ok" role="status">@ok</div> }
+        @if (TempData["Error"] is string bad) { <div class="flash bad" role="alert">@bad</div> }
+            @if (ViewData["AccessWarning"] is string warn)
+            {
+                <div class="flash bad" role="alert">@warn</div>
+            }
+        @RenderBody()
+    </main>
+</div>
+<script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

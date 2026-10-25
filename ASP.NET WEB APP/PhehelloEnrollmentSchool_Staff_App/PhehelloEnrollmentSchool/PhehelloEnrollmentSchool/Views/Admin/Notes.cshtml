@@ -1,0 +1,40 @@
+@*
+    Group Member's
+    Katleho Makhoali 224131387
+    Paballo Lebusa 221000537
+    Lerato Mahlatsi 220049867
+    David Adegbola 220042034
+    Mpho Motaung 224074632
+    Mamello Lepitla 222018199
+*@
+@model NotesViewModel
+@{ ViewData["Title"] = "Application Notes"; ViewData["Nav"] = "Notes"; var sel = Model.Picker.Selected; }
+<div class="page-head"><div><h1>Application Notes</h1><p class="subtitle">Internal administrator notes linked to an application.</p></div></div>
+@if (sel == null)
+{
+    <div class="card"><p class="empty" style="padding:30px">There are no applications yet.</p></div>
+}
+else
+{
+    <div class="grid-form">
+        <div class="card">
+            <h2>@sel.DisplayId — Notes</h2>
+            @foreach (var n in Model.Notes)
+            {
+                <div class="note-item"><div class="who">@(string.IsNullOrWhiteSpace(n.Author?.FullName) ? "Administrator" : n.Author!.FullName)</div>
+                    <div class="when">@Fmt.DateTimeNote(n.CreatedAt)</div><div class="body">@n.NoteText</div></div>
+            }
+            @if (!Model.Notes.Any()) { <p class="note-text">No notes yet for this application.</p> }
+        </div>
+        <div class="card">
+            <h2>Add Note</h2>
+            <form method="post" asp-action="AddNote">
+                <label class="lbl" style="margin-top:0">Application</label>
+                <partial name="_AppPicker" model="Model.Picker" />
+                <label class="lbl" for="note">Note</label>
+                <textarea class="textarea" id="note" name="note" placeholder="Enter internal note..." required></textarea>
+                <div class="btn-row"><button class="btn btn-brown btn-sm" type="submit">Save Note</button></div>
+            </form>
+        </div>
+    </div>
+}

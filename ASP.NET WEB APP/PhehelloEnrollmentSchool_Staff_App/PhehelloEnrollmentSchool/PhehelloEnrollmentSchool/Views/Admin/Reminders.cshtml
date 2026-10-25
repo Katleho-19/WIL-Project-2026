@@ -1,0 +1,37 @@
+@*
+    Group Member's
+    Katleho Makhoali 224131387
+    Paballo Lebusa 221000537
+    Lerato Mahlatsi 220049867
+    David Adegbola 220042034
+    Mpho Motaung 224074632
+    Mamello Lepitla 222018199
+*@
+
+@model ReminderViewModel
+@{ ViewData["Title"] = "Send Deadline Reminder"; ViewData["Nav"] = "Reminders"; }
+<div class="page-head"><div><h1>Send Deadline Reminder</h1><p class="subtitle">Notify parents about important enrolment deadlines.</p></div></div>
+<div class="card" style="max-width:760px">
+    <form method="post" asp-action="SendReminder">
+        <label class="lbl" for="target" style="margin-top:0">Recipient / Application</label>
+        <select class="select" id="target" name="target" required>
+            <option value="">Select application or parent ▾</option>
+            @if (Model.Choices.Any()) { <option value="all">All parents with open applications (@Model.Choices.Select(c => c.SubmittedBy).Distinct().Count())</option> }
+            @foreach (var a in Model.Choices)
+            {
+                <option value="@a.ApplicationId">@a.DisplayId — @a.ParentName (@(a.Learner?.NameWithoutMiddle ?? "Learner"))</option>
+            }
+        </select>
+
+        <label class="lbl" for="type">Reminder Type</label>
+        <select class="select" id="type" name="type">
+            <option>Application deadline</option><option>Missing documents</option><option>Proof of payment</option>
+        </select>
+
+        <label class="lbl" for="message">Message</label>
+        <textarea class="textarea" id="message" name="message" required>Reminder: Please complete any outstanding enrolment requirements before the school deadline.</textarea>
+
+        <div class="btn-row"><button class="btn btn-gold btn-sm" type="submit">Send Reminder</button>
+            <a class="btn btn-outline btn-sm" asp-action="Dashboard">Cancel</a></div>
+    </form>
+</div>

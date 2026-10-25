@@ -1,0 +1,33 @@
+@*
+    Group Member's
+    Katleho Makhoali 224131387
+    Paballo Lebusa 221000537
+    Lerato Mahlatsi 220049867
+    David Adegbola 220042034
+    Mpho Motaung 224074632
+    Mamello Lepitla 222018199
+*@
+
+@model ApplicationListViewModel
+@{ ViewData["Title"] = Model.Title; ViewData["Nav"] = Model.Action; }
+<div class="page-head">
+    <div><h1>@Model.Title</h1><p class="subtitle">@Model.Subtitle</p></div>
+    <a class="btn btn-gold" asp-action="@Model.Action" asp-all-route-data="@(new Dictionary<string,string?>{ ["Search"]=Model.Filters.Filter.Search, ["Status"]=Model.Filters.StatusLocked ? null : Model.Filters.Filter.Status, ["Year"]=Model.Filters.Filter.Year.ToString() })">Refresh</a>
+</div>
+<div class="card table-card">
+    <partial name="_Filters" model="Model.Filters" />
+    <table class="t">
+        <thead><tr><th>Application ID</th><th>Learner</th><th>Submitted On</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+        @foreach (var a in Model.Items)
+        {
+            <tr>
+                <td>@a.DisplayId</td><td>@(a.Learner?.ShortName ?? "Learner")</td><td>@Fmt.Date(a.DisplayDate)</td>
+                <td><span class="chip @Fmt.ChipClass(a.Status)">@a.Status</span></td>
+                <td><a class="btn btn-outline btn-sm" asp-action="Review" asp-route-id="@a.ApplicationId">View</a></td>
+            </tr>
+        }
+        @if (!Model.Items.Any()) { <tr><td colspan="5" class="empty">No applications match.</td></tr> }
+        </tbody>
+    </table>
+</div>
