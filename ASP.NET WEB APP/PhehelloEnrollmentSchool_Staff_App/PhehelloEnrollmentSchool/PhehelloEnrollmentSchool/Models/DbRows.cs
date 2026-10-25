@@ -1,3 +1,12 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: DbRows.cs defines the "row" classes - plain C# classes that mirror the tables of the shared Supabase
+// database. The Supabase client turns the JSON it receives (snake_case column names) into these objects, so a column
+// such as full_name becomes the property FullName. Nullable properties (with ?) may be missing in an older copy of the database.
+
 using System.Text.Json.Serialization;
 using PhehelloEnrollmentSchool.Infrastructure;
 
@@ -8,6 +17,9 @@ namespace PhehelloEnrollmentSchool.Models
     // an older copy of the shared database is nullable so a missing column never breaks
     // the page.
 
+    /// <summary>
+    /// ProfileRow (class) - one row of the profiles table: a user's id, name, email, phone number, role (Parent, Administrator or Financial Clerk) and relationship to the learner.
+    /// </summary>
     public sealed class ProfileRow
     {
         public Guid Id { get; set; }
@@ -18,6 +30,9 @@ namespace PhehelloEnrollmentSchool.Models
         public string? RelationshipToLearner { get; set; }
     }
 
+    /// <summary>
+    /// LearnerRow (class) - one row of the learners table: the learner's id, parent, names, ID number, date of birth, gender and student number.
+    /// </summary>
     public sealed class LearnerRow
     {
         public Guid LearnerId { get; set; }
@@ -30,9 +45,15 @@ namespace PhehelloEnrollmentSchool.Models
         public string? Gender { get; set; }
         public string? StudentNumber { get; set; }
 
+        /// <summary>
+        /// FullName - the first name, middle name and surname joined with spaces; empty parts are skipped.
+        /// </summary>
         public string FullName =>
             string.Join(' ', new[] { FirstName, MiddleName, Surname }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
+        /// <summary>
+        /// NameWithoutMiddle - the first name and surname only, joined with a space.
+        /// </summary>
         public string NameWithoutMiddle =>
             string.Join(' ', new[] { FirstName, Surname }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
@@ -49,6 +70,9 @@ namespace PhehelloEnrollmentSchool.Models
         }
     }
 
+    /// <summary>
+    /// DocumentRow (class) - one row of the application_documents table: an uploaded supporting document (type, file name, storage path, upload time and verification status).
+    /// </summary>
     public sealed class DocumentRow
     {
         public Guid DocumentId { get; set; }
@@ -60,6 +84,10 @@ namespace PhehelloEnrollmentSchool.Models
         public string? VerificationStatus { get; set; }
     }
 
+    /// <summary>
+    /// PaymentRow (class) - one row of the payments table: a proof-of-payment submission with its reference, amount, proof file, verification status
+    /// (Pending by default), who verified it, when and any notes. It can also carry the parent application when the query embeds it.
+    /// </summary>
     public sealed class PaymentRow
     {
         public Guid PaymentId { get; set; }
@@ -80,6 +108,10 @@ namespace PhehelloEnrollmentSchool.Models
         public ApplicationRow? Application { get; set; }
     }
 
+    /// <summary>
+    /// ApplicationRow (class) - one row of the applications table: reference number, learner, who submitted it, grade applied for, status (Pending by default),
+    /// payment verification status and the key dates. A query can embed the related learner, submitter profile, payments and documents.
+    /// </summary>
     public sealed class ApplicationRow
     {
         public Guid ApplicationId { get; set; }
@@ -120,10 +152,17 @@ namespace PhehelloEnrollmentSchool.Models
                 ? ReferenceNumber!
                 : $"PH{DisplayDate.Year}-{ApplicationId.ToString("N")[..5].ToUpperInvariant()}";
 
+        /// <summary>
+        /// ParentName - the submitting parent's full name, or "Parent / Guardian" if it is not available.
+        /// </summary>
         public string ParentName =>
             string.IsNullOrWhiteSpace(Submitter?.FullName) ? "Parent / Guardian" : Submitter!.FullName!;
     }
 
+    /// <summary>
+    /// SchoolPaymentRecordRow (class) - one row of the school's own payment records (what the bank actually received): reference, learner name and ID, amount, date and method.
+    /// The Financial Clerk compares these with the parent's proof of payment.
+    /// </summary>
     public sealed class SchoolPaymentRecordRow
     {
         public Guid SchoolPaymentRecordId { get; set; }
@@ -135,6 +174,9 @@ namespace PhehelloEnrollmentSchool.Models
         public string? PaymentMethod { get; set; }
     }
 
+    /// <summary>
+    /// NoteRow (class) - one row of the application notes table: an internal note an administrator wrote about an application, with its author when embedded.
+    /// </summary>
     public sealed class NoteRow
     {
         public Guid NoteId { get; set; }
@@ -147,6 +189,9 @@ namespace PhehelloEnrollmentSchool.Models
         public ProfileRow? Author { get; set; }
     }
 
+    /// <summary>
+    /// NotificationRow (class) - one row of the notifications table: a message or reminder sent to a parent (recipient, type, title, message, time).
+    /// </summary>
     public sealed class NotificationRow
     {
         public Guid NotificationId { get; set; }
@@ -158,6 +203,9 @@ namespace PhehelloEnrollmentSchool.Models
         public DateTimeOffset? CreatedAt { get; set; }
     }
 
+    /// <summary>
+    /// ConfirmationLetterRow (class) - one row of the confirmation letters table: a generated PDF letter for an application (learner details, file name, storage path and when it was generated).
+    /// </summary>
     public sealed class ConfirmationLetterRow
     {
         public Guid ConfirmationLetterId { get; set; }

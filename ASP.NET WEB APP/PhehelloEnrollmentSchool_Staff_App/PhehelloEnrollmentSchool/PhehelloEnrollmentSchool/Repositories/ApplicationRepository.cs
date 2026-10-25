@@ -1,8 +1,20 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: ApplicationRepository.cs is the data-access class for applications (FR7, FR8, FR9, FR13): it lists
+// and loads applications and documents, changes an application's status, records the status history and handles the
+// administrators' internal notes. It talks to Supabase through SupabaseClient.
+
 using PhehelloEnrollmentSchool.Infrastructure;
 using PhehelloEnrollmentSchool.Models;
 
 namespace PhehelloEnrollmentSchool.Repositories
 {
+    /// <summary>
+    /// IApplicationRepository (interface) - the contract the controllers depend on; ApplicationRepository is the real implementation (registered in Program.cs).
+    /// </summary>
     public interface IApplicationRepository
     {
         Task<List<ApplicationRow>> ListAsync(CancellationToken ct = default);
@@ -23,18 +35,33 @@ namespace PhehelloEnrollmentSchool.Repositories
     /// <summary>FR7, FR8, FR9, FR13 - applications, review decisions and internal notes.</summary>
     public sealed class ApplicationRepository : IApplicationRepository
     {
+        /// <summary>
+        /// ListSelect - the PostgREST column list for the application tables: all application columns plus the learner's names and student number and the submitting parent's full name.
+        /// </summary>
         // Light list: only what the tables show.
         private const string ListSelect =
             "*,learners(first_name,surname,student_number),submitter:profiles!applications_submitted_by_fkey(full_name)";
 
+        /// <summary>
+        /// DetailSelect - the PostgREST column list for the review page: the application with its full learner and parent profile, payments and documents.
+        /// </summary>
         // Full detail for the review page.
         private const string DetailSelect =
             "*,learners(*),submitter:profiles!applications_submitted_by_fkey(*),payments(*),application_documents(*)";
 
+        /// <summary>
+        /// _db - the Supabase client used for every request.
+        /// </summary>
         private readonly SupabaseClient _db;
 
+        /// <summary>
+        /// Constructor - receives the Supabase client from dependency injection.
+        /// </summary>
         public ApplicationRepository(SupabaseClient db) => _db = db;
 
+        /// <summary>
+        /// ListAsync() - loads up to 1000 applications, newest first, using the light column list, and removes drafts (a draft has not been submitted yet).
+        /// </summary>
         public async Task<List<ApplicationRow>> ListAsync(CancellationToken ct = default)
         {
             var rows = await _db.SelectAsync<ApplicationRow>(
@@ -42,6 +69,9 @@ namespace PhehelloEnrollmentSchool.Repositories
             return rows.Where(a => a.Status != AppStatus.Draft).ToList();
         }
 
+        /// <summary>
+        /// GetAsync() - loads one application by id with all its related data; returns null if it does not exist or the user may not see it.
+        /// </summary>
         public async Task<ApplicationRow?> GetAsync(Guid applicationId, CancellationToken ct = default)
         {
             var rows = await _db.SelectAsync<ApplicationRow>(
@@ -50,6 +80,9 @@ namespace PhehelloEnrollmentSchool.Repositories
             return rows.FirstOrDefault();
         }
 
+        /// <summary>
+        /// GetDocumentAsync() - loads one uploaded document record by id; returns null if not found.
+        /// </summary>
         public async Task<DocumentRow?> GetDocumentAsync(Guid documentId, CancellationToken ct = default)
         {
             var rows = await _db.SelectAsync<DocumentRow>(
@@ -57,6 +90,10 @@ namespace PhehelloEnrollmentSchool.Repositories
             return rows.FirstOrDefault();
         }
 
+        /// <summary>
+        /// SetStatusAsync() - sets a new status, the reviewer and the review time, but only if the application is still in the expected status
+        /// (so two administrators cannot decide the same application). Returns true if a row was updated, false if nothing changed.
+        /// </summary>
         public async Task<bool> SetStatusAsync(Guid applicationId, string expectedStatus, string newStatus, Guid reviewerId, CancellationToken ct = default)
         {
             var now = DateTimeOffset.UtcNow;
@@ -71,6 +108,9 @@ namespace PhehelloEnrollmentSchool.Repositories
             return updated.Count > 0;
         }
 
+        /// <summary>
+        /// AddHistoryAsync() - inserts a row in application_status_history recording who changed the status, from what, to what and why.
+        /// </summary>
         public Task AddHistoryAsync(Guid applicationId, Guid changedBy, string? oldStatus, string newStatus, string? reason, CancellationToken ct = default) =>
             _db.InsertAsync("application_status_history", new
             {
@@ -81,12 +121,18 @@ namespace PhehelloEnrollmentSchool.Repositories
                 change_reason = reason
             }, null, ct);
 
+        /// <summary>
+        /// NotesAsync() - loads the internal notes of an application, newest first, including each author's name.
+        /// </summary>
         public Task<List<NoteRow>> NotesAsync(Guid applicationId, CancellationToken ct = default) =>
             _db.SelectAsync<NoteRow>(
                 "application_notes",
                 $"select=*,author:profiles!application_notes_created_by_fkey(full_name)&{SupabaseClient.Eq("application_id", applicationId)}&order=created_at.desc",
                 ct);
 
+        /// <summary>
+        /// AddNoteAsync() - inserts a new internal note for an application, written by the given administrator.
+        /// </summary>
         public Task AddNoteAsync(Guid applicationId, Guid createdBy, string text, CancellationToken ct = default) =>
             _db.InsertAsync("application_notes", new
             {

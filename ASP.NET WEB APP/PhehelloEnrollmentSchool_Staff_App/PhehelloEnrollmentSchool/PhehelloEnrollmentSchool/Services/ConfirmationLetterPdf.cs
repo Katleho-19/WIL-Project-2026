@@ -1,8 +1,19 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: ConfirmationLetterPdf.cs builds the one-page A4 confirmation (or outcome) letter as a PDF file (FR12) without any
+// third-party library. It writes the PDF format by hand: page text, school crest image, fonts and the file structure.
+
 using System.Globalization;
 using System.Text;
 
 namespace PhehelloEnrollmentSchool.Services
 {
+    /// <summary>
+    /// LetterContent (class) - the data printed on a letter: school name, address and phone, whether the application was approved, learner name, ID number, student number, grade, application reference and issue date.
+    /// </summary>
     public sealed class LetterContent
     {
         public string SchoolName { get; init; } = "";
@@ -16,12 +27,21 @@ namespace PhehelloEnrollmentSchool.Services
         public string ApplicationRef { get; init; } = "";
         public DateTime IssuedOn { get; init; }
 
+        /// <summary>
+        /// Heading - the letter heading: "CONFIRMATION OF ENROLMENT" if approved, otherwise "OUTCOME OF APPLICATION".
+        /// </summary>
         public string Heading => Approved ? "CONFIRMATION OF ENROLMENT" : "OUTCOME OF APPLICATION";
 
+        /// <summary>
+        /// Intro - the opening sentence (a congratulation if approved, a regret if not).
+        /// </summary>
         public string Intro => Approved
             ? "We are pleased to confirm the successful enrolment of:"
             : "We regret to inform you that the application for enrolment of:";
 
+        /// <summary>
+        /// Closing - the closing paragraph (keep the letter safe if approved, contact the school office if not).
+        /// </summary>
         public string Closing => Approved
             ? "Please keep this letter safe. The student number above is unique to the learner and " +
               "may be verified against the school's records."
@@ -34,20 +54,37 @@ namespace PhehelloEnrollmentSchool.Services
     /// </summary>
     public sealed class ConfirmationLetterPdf
     {
+        /// <summary>
+        /// PageW, PageH - the A4 page size in PDF points (595 x 842).
+        /// </summary>
         private const double PageW = 595, PageH = 842;
+        /// <summary>
+        /// _crestPath - the full path of the crest image (wwwroot/img/crest-letter.jpg) printed on the letter.
+        /// </summary>
         private readonly string _crestPath;
 
+        /// <summary>
+        /// Constructor - works out the crest image path from the web root folder.
+        /// </summary>
         public ConfirmationLetterPdf(IWebHostEnvironment env)
         {
             _crestPath = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "img", "crest-letter.jpg");
         }
 
+        /// <summary>
+        /// Brown, Gold, Ink, Muted - the text and line colours as PDF RGB values between 0 and 1.
+        /// </summary>
         // Colours
         private const string Brown = "0.357 0.227 0.161";
         private const string Gold = "0.788 0.635 0.153";
         private const string Ink = "0.231 0.141 0.094";
         private const string Muted = "0.42 0.36 0.32";
 
+        /// <summary>
+        /// Build() - creates the letter and returns the PDF bytes. It draws a page frame, the school name, the crest (if the image can be loaded), the heading and a line, the greeting, the intro,
+        /// the learner's name, the student number (only if approved), ID number, grade and application reference (only when present), the closing paragraph wrapped to 380 points, the issue date, a signature
+        /// line labelled "Administrator" and a footer with the address and telephone. The drawing commands are then assembled into a complete PDF file.
+        /// </summary>
         public byte[] Build(LetterContent c)
         {
             var cs = new StringBuilder();
@@ -118,6 +155,10 @@ namespace PhehelloEnrollmentSchool.Services
 
         // ------------------------------------------------------------ PDF writer
 
+        /// <summary>
+        /// Assemble() - writes the PDF file structure: the catalog, the page tree, the page, the content stream, the two fonts (Helvetica and Helvetica-Bold) and the optional JPEG image,
+        /// followed by the cross-reference table that records where each object starts, and the trailer. Returns the file bytes.
+        /// </summary>
         private static byte[] Assemble(string content, (byte[] Data, int Width, int Height)? image)
         {
             var objects = new List<byte[]>();
@@ -170,6 +211,9 @@ namespace PhehelloEnrollmentSchool.Services
 
         // ------------------------------------------------------------ text helpers
 
+        /// <summary>
+        /// Centered() - adds a line of text to the page, centred horizontally (never closer than 48 points to the left edge), with the chosen font, size, vertical position, colour and optional letter spacing.
+        /// </summary>
         private static void Centered(StringBuilder cs, string text, bool bold, double size, double y, string color, double charSpace = 0)
         {
             var width = Measure(text, bold, size) + charSpace * Math.Max(0, text.Length - 1);
@@ -180,6 +224,9 @@ namespace PhehelloEnrollmentSchool.Services
             cs.Append($"{F(x)} {F(y)} Td ({Escape(text)}) Tj ET\n");
         }
 
+        /// <summary>
+        /// Wrap() - splits a text into lines that are no wider than the given width, measuring each word with the font tables.
+        /// </summary>
         private static IEnumerable<string> Wrap(string text, bool bold, double size, double maxWidth)
         {
             var line = new StringBuilder();
@@ -201,6 +248,9 @@ namespace PhehelloEnrollmentSchool.Services
             if (line.Length > 0) yield return line.ToString();
         }
 
+        /// <summary>
+        /// Escape() - makes text safe for a PDF string: characters above 255 become '?', backslashes and brackets are escaped and control characters are dropped.
+        /// </summary>
         private static string Escape(string s)
         {
             var sb = new StringBuilder();
@@ -214,8 +264,14 @@ namespace PhehelloEnrollmentSchool.Services
             return sb.ToString();
         }
 
+        /// <summary>
+        /// F() - formats a number for the PDF (at most two decimals, always with a dot).
+        /// </summary>
         private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
 
+        /// <summary>
+        /// Regular - the width of each printable character (ASCII 32 to 126) in Helvetica, per 1000 units of text size; used to measure and centre text.
+        /// </summary>
         // Standard Helvetica / Helvetica-Bold advance widths for ASCII 32..126 (per 1000 em).
         private static readonly int[] Regular =
         {
@@ -227,6 +283,9 @@ namespace PhehelloEnrollmentSchool.Services
             556,556,333,500,278,556,500,722,500,500,500,334,260,334,584
         };
 
+        /// <summary>
+        /// Bold - the same character widths for Helvetica-Bold.
+        /// </summary>
         private static readonly int[] Bold =
         {
             278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
@@ -237,6 +296,9 @@ namespace PhehelloEnrollmentSchool.Services
             611,611,389,556,333,611,556,778,556,556,500,389,280,389,584
         };
 
+        /// <summary>
+        /// Measure() - returns the width of a text in points for the given font and size, using the width tables (556 for characters outside the table).
+        /// </summary>
         private static double Measure(string text, bool bold, double size)
         {
             var table = bold ? Bold : Regular;
@@ -248,6 +310,10 @@ namespace PhehelloEnrollmentSchool.Services
 
         // ------------------------------------------------------------ crest image
 
+        /// <summary>
+        /// LoadJpeg() - reads the crest JPEG file and finds its pixel size by scanning for the Start-Of-Frame marker. Returns the bytes with the width and height,
+        /// or null if the file is missing or cannot be read.
+        /// </summary>
         private (byte[] Data, int Width, int Height)? LoadJpeg()
         {
             try

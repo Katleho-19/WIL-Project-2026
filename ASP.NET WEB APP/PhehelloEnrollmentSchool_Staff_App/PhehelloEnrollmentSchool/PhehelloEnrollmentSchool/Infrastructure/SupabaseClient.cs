@@ -1,3 +1,12 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: SupabaseClient.cs is the low-level client for the Supabase REST (PostgREST) and Storage APIs.
+// All repositories use it. It attaches the signed-in staff member's own access token to each request so the database's
+// Row Level Security decides what that person may see or change.
+
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -7,6 +16,7 @@ using PhehelloEnrollmentSchool.Models;
 
 namespace PhehelloEnrollmentSchool.Infrastructure
 {
+    // SupabaseClient (class) - sends HTTP requests to Supabase; see the notes above.
     /// <summary>
     /// Thin client for the Supabase REST (PostgREST) and Storage APIs.
     /// Every request is sent with the signed-in staff member's own access token, so the
@@ -15,9 +25,21 @@ namespace PhehelloEnrollmentSchool.Infrastructure
     /// </summary>
     public sealed class SupabaseClient
     {
+        /// <summary>
+        /// _http - the HTTP client used to send requests.
+        /// </summary>
         private readonly HttpClient _http;
+        /// <summary>
+        /// _options - the Supabase settings (URL, key, bucket).
+        /// </summary>
         private readonly SupabaseOptions _options;
+        /// <summary>
+        /// _context - gives access to the current web request so the user's access token can be read.
+        /// </summary>
         private readonly IHttpContextAccessor _context;
+        /// <summary>
+        /// _logger - writes log messages.
+        /// </summary>
         private readonly ILogger<SupabaseClient> _logger;
 
         /// <summary>Reads snake_case JSON into PascalCase C# properties.</summary>
@@ -28,8 +50,14 @@ namespace PhehelloEnrollmentSchool.Infrastructure
             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString
         };
 
+        /// <summary>
+        /// WriteJson - the default settings used when turning C# objects into JSON to send.
+        /// </summary>
         private static readonly JsonSerializerOptions WriteJson = new();
 
+        /// <summary>
+        /// Constructor - receives the HTTP client, settings, request accessor and logger from dependency injection.
+        /// </summary>
         public SupabaseClient(
             HttpClient http,
             IOptions<SupabaseOptions> options,
@@ -42,10 +70,15 @@ namespace PhehelloEnrollmentSchool.Infrastructure
             _logger = logger;
         }
 
+        /// <summary>
+        /// Bucket - the storage bucket name from the settings.
+        /// </summary>
         public string Bucket => _options.Bucket;
 
         // ------------------------------------------------------------------ REST
 
+        // SelectAsync() - reads rows from a table (GET). It builds the request with the user's token, checks the response and converts the returned JSON into a list of T.
+        // An optional accessToken can be supplied instead of the one from the current request.
         /// <summary>GET /rest/v1/{table}?{query}. <paramref name="query"/> must already be URL-encoded.</summary>
         public async Task<List<T>> SelectAsync<T>(string table, string query, CancellationToken ct = default, string? accessToken = null)
         {
@@ -100,6 +133,7 @@ namespace PhehelloEnrollmentSchool.Infrastructure
 
         // --------------------------------------------------------------- Storage
 
+        // DownloadAsync() - downloads a private file from Storage using the user's token. Returns its bytes and content type, or null (and a log warning) if the file does not exist.
         /// <summary>Downloads a private file. Returns null when it does not exist.</summary>
         public async Task<(byte[] Bytes, string ContentType)?> DownloadAsync(string objectPath, CancellationToken ct = default)
         {
@@ -119,6 +153,9 @@ namespace PhehelloEnrollmentSchool.Infrastructure
             return (bytes, type);
         }
 
+        /// <summary>
+        /// UploadAsync() - uploads a file to the storage bucket at the given path. 'upsert' says whether an existing file may be overwritten. Throws if the upload fails.
+        /// </summary>
         public async Task UploadAsync(string objectPath, byte[] bytes, string contentType, bool upsert, CancellationToken ct = default)
         {
             var url = $"{_options.BaseUrl}/storage/v1/object/{_options.Bucket}/{EncodePath(objectPath)}";
@@ -133,15 +170,28 @@ namespace PhehelloEnrollmentSchool.Infrastructure
 
         // --------------------------------------------------------------- helpers
 
+        /// <summary>
+        /// Eq() - builds a filter text such as "column=eq.value" with the value URL-encoded; used in query strings.
+        /// </summary>
         public static string Eq(string column, object value) =>
             $"{column}=eq.{Uri.EscapeDataString(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "")}";
 
+        /// <summary>
+        /// EncodePath() - URL-encodes each part of a storage path while keeping the slashes.
+        /// </summary>
         private static string EncodePath(string path) =>
             string.Join('/', path.Split('/', StringSplitOptions.RemoveEmptyEntries).Select(Uri.EscapeDataString));
 
+        /// <summary>
+        /// JsonBody() - turns an object into a JSON request body (UTF-8, application/json).
+        /// </summary>
         private static StringContent JsonBody(object body) =>
             new(JsonSerializer.Serialize(body, WriteJson), Encoding.UTF8, "application/json");
 
+        /// <summary>
+        /// Build() - creates a request with the public API key and the user's bearer token (taken from the parameter or from the current request's claims).
+        /// If there is no token it throws a 401 SupabaseApiException.
+        /// </summary>
         private HttpRequestMessage Build(HttpMethod method, string url, string? accessToken = null)
         {
             var token = accessToken ?? _context.HttpContext?.User.FindFirst(SessionClaims.AccessToken)?.Value;
@@ -154,6 +204,10 @@ namespace PhehelloEnrollmentSchool.Infrastructure
             return request;
         }
 
+        /// <summary>
+        /// EnsureSuccessAsync() - does nothing for a successful response. Otherwise it reads the error body, extracts the error code and message when it is JSON (or keeps the raw text),
+        /// logs a warning and throws a SupabaseApiException with the status code, code and detail.
+        /// </summary>
         private async Task EnsureSuccessAsync(HttpResponseMessage response, string what)
         {
             if (response.IsSuccessStatusCode) return;
