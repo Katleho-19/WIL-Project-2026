@@ -1,3 +1,11 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: help_support_screen.dart defines the Help & Support area: a list of help topics (FAQs,
+// Contact Us, Payment Guide, Document Requirements, User Guide), the screen that shows one topic's content, and the two small data classes that hold the help text.
+
 import 'package:flutter/material.dart';
 
 import '../../config/school_info.dart';
@@ -8,11 +16,16 @@ import '../widgets/app_card.dart';
 import '../widgets/app_header.dart';
 import '../widgets/school_crest.dart';
 
+/// HelpSupportScreen (class) - the Help & Support screen that lists the help topics. The help content is based on the SRS and the school's enrolment form.
 /// Help & Support: guidance on applying, documents, payment and contacting
 /// the school. Content is based on the SRS and the school's enrolment form.
 class HelpSupportScreen extends StatelessWidget {
+  /// Constructor - no required parameters.
   const HelpSupportScreen({super.key});
 
+  /// _topics - the fixed list of help topics. Each HelpTopic has a title, a subtitle and a list of HelpBlock entries (heading and text): FAQs (who can use the app, payment,
+  /// approval status, corrections), Contact Us (telephone and address from SchoolInfo), Payment Guide (fee, bank details, reference, verification), Document Requirements (the four documents
+  /// and the file rules) and User Guide (five steps from registering to tracking progress).
   static final List<HelpTopic> _topics = [
     HelpTopic('FAQs', 'Frequently asked questions', [
       HelpBlock(
@@ -95,6 +108,8 @@ class HelpSupportScreen extends StatelessWidget {
     ]),
   ];
 
+  /// build() - draws the "Help & Support" header (with the school name and a back button) and a list containing the "How can we help?" heading, one tappable card for each topic
+  /// (opens that topic's content page through RouteManager.toHelpContent) and a dark brown card with the school crest, name and motto.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -183,24 +198,32 @@ class HelpSupportScreen extends StatelessWidget {
   }
 }
 
+/// HelpTopic (class) - an immutable record for one help topic: its title, a short subtitle and its list of blocks.
 class HelpTopic {
+  /// Constructor - title, subtitle and blocks are positional parameters.
   const HelpTopic(this.title, this.subtitle, this.blocks);
   final String title;
   final String subtitle;
   final List<HelpBlock> blocks;
 }
 
+/// HelpBlock (class) - an immutable record for one piece of help text: a heading and its text.
 class HelpBlock {
+  /// Constructor - heading and text are positional parameters.
   const HelpBlock(this.heading, this.text);
   final String heading;
   final String text;
 }
 
+/// HelpContentScreen (class) - the page that shows all the blocks of one HelpTopic (opened from the Help & Support list).
 class HelpContentScreen extends StatelessWidget {
+  /// Constructor - the topic to show is required.
   const HelpContentScreen({super.key, required this.topic});
 
   final HelpTopic topic;
 
+  /// build() - draws a header with the topic title and a scrollable list with one card for each block: the heading in bold and the text below it (selectable, so the parent can copy
+  /// things such as the bank details).
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -2,6 +2,10 @@
 //Group name: Ctrl+Alt+Del
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: confirmation_letter_dialog.dart defines the pop-up that shows the school's confirmation
+// (or outcome) letter as a PDF preview, with a button to save it to the phone.
+
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
@@ -10,12 +14,16 @@ import '../../theme/app_colors.dart';
 import '../../viewmodels/application_details_view_model.dart';
 import '../widgets/buttons.dart';
 
+/// ConfirmationLetterDialog (class) - the pop-up window. 'approved' decides whether it shows the congratulatory wording or the neutral outcome wording.
 /// Pop-up that shows the confirmation letter PDF with a Download button.
 class ConfirmationLetterDialog extends StatefulWidget {
+  /// Constructor - approved is required.
   const ConfirmationLetterDialog({super.key, required this.approved});
 
   final bool approved;
 
+  /// show() - helper that opens the dialog. A dialog is created outside the screen's provider tree, so the
+  /// ApplicationDetailsViewModel is passed in and provided again with ChangeNotifierProvider.value.
   /// The dialog sits outside the screen's provider, so the view model
   /// is passed in explicitly.
   static Future<void> show(
@@ -32,19 +40,26 @@ class ConfirmationLetterDialog extends StatefulWidget {
     );
   }
 
+  /// createState() - creates the State object _ConfirmationLetterDialogState.
   @override
   State<ConfirmationLetterDialog> createState() =>
       _ConfirmationLetterDialogState();
 }
 
+/// _ConfirmationLetterDialogState (class) - remembers whether the last save attempt worked.
 class _ConfirmationLetterDialogState extends State<ConfirmationLetterDialog> {
+  /// _saved - null until a save has been tried; then true (saved) or false (failed).
   bool? _saved; // null = not tried yet
 
+  /// _download() - asks the view model to save the letter to the phone and stores the result (if the dialog is still open) so a message can be shown.
   Future<void> _download() async {
     final ok = await context.read<ApplicationDetailsViewModel>().saveLetter();
     if (mounted) setState(() => _saved = ok);
   }
 
+  /// build() - reads the letter bytes from the view model and picks the title and message for approved or not approved. The dialog shows
+  /// the title, the message, a PDF preview of the letter (about 45% of the screen height, with the default toolbar hidden), a green "saved" or red "could
+  /// not save" message once a save was tried, the "Download Letter" button (spinner while saving) and a "Close" button.
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ApplicationDetailsViewModel>();

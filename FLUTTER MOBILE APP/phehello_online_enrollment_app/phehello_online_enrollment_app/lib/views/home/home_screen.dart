@@ -1,3 +1,12 @@
+//Project name: Phehello Enrolment App
+//Group name: Ctrl+Alt+Del
+//Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
+//Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
+
+// FILE PURPOSE: home_screen.dart defines the Home / Dashboard tab: the school header, a greeting with the
+// parent's name, the "New Application" call-to-action, the saved-draft card, a preview of the latest two
+// applications and two quick-action tiles.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,10 +29,17 @@ import '../../models/enrolment_draft.dart';
 import '../../viewmodels/draft_view_model.dart';
 import '../../viewmodels/enrolment_flow_view_model.dart';
 
+/// HomeScreen (class) - the first tab of the main shell (FR5 entry point). It has no state of its own; it reads everything from the view models.
 /// Home / Dashboard (FR5 entry point).
 class HomeScreen extends StatelessWidget {
+  /// Constructor - no required parameters.
   const HomeScreen({super.key});
 
+  /// build() - watches the auth, applications, draft, notifications and settings view models. Chooses the display name
+  /// (or "Parent / Guardian" if the name is empty). Draws: the brown school header (with a white dot that opens the Alerts
+  /// tab when there are unread notifications and notifications are on); then a pull-to-refresh list containing the greeting,
+  /// the name, the brown WELCOME card with the gold "New Application" button, the "Your Applications" heading, the saved-draft
+  /// card (only if a draft exists), the applications preview, the two quick tiles (New Application / My Applications) and the school motto.
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthViewModel>();
@@ -212,12 +228,18 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+/// _ApplicationsPreview (class) - the applications area of the dashboard. It receives the ApplicationsViewModel (apps)
+/// and whether a saved draft is already shown (hasDraft).
 class _ApplicationsPreview extends StatelessWidget {
+  /// Constructor - apps is required; hasDraft defaults to false.
   const _ApplicationsPreview({required this.apps, this.hasDraft = false});
 
   final ApplicationsViewModel apps;
   final bool hasDraft;
 
+  /// build() - decides what to show: a loader while loading for the first time; an error message with a retry button if loading
+  /// failed and nothing is loaded; an "No applications yet" card if the list is empty (hidden if a draft card is already shown);
+  /// otherwise the two most recent applications as _HomeApplicationCard widgets.
   @override
   Widget build(BuildContext context) {
     if (apps.loading && apps.items.isEmpty) {
@@ -270,12 +292,16 @@ class _ApplicationsPreview extends StatelessWidget {
   }
 }
 
+/// _SavedDraftCard (class) - the card for the saved, unsubmitted application, with a Continue button and a delete link.
 /// The saved (unsubmitted) application, with a Continue button.
 class _SavedDraftCard extends StatelessWidget {
+  /// Constructor - the saved EnrolmentDraft is required.
   const _SavedDraftCard({required this.draft});
 
   final EnrolmentDraft draft;
 
+  /// _delete() - asks "Delete saved application?" in a dialog (Keep / Delete). If the parent confirms, it tells
+  /// DraftViewModel to discard the saved draft from the device.
   Future<void> _delete(BuildContext context) async {
     final drafts = context.read<DraftViewModel>();
     final ok = await showDialog<bool>(
@@ -303,6 +329,10 @@ class _SavedDraftCard extends StatelessWidget {
     if (ok == true) await drafts.discard();
   }
 
+  /// build() - works out the draft's current step (kept between the first and last step), the learner's name and the
+  /// saved time, then draws a card with: the title, the learner name (or "Learner not named yet"), a yellow DRAFT badge, "Step X of 6 - step title",
+  /// "Last saved ..." (if known), a progress bar, the "Continue Application" button (restores the draft and opens the wizard) and the
+  /// red "Delete saved application" link.
   @override
   Widget build(BuildContext context) {
     final stepIndex = draft.step
@@ -405,11 +435,15 @@ class _SavedDraftCard extends StatelessWidget {
   }
 }
 
+/// _HomeApplicationCard (class) - a summary card for one application on the dashboard.
 class _HomeApplicationCard extends StatelessWidget {
+  /// Constructor - the EnrolmentApplication is required.
   const _HomeApplicationCard({required this.app});
 
   final EnrolmentApplication app;
 
+  /// build() - draws the reference number, the subtitle (grade and submission date), the status chip and a "View Application"
+  /// button that opens the Application Details screen.
   @override
   Widget build(BuildContext context) {
     return AppCard(
@@ -457,7 +491,9 @@ class _HomeApplicationCard extends StatelessWidget {
   }
 }
 
+/// _QuickTile (class) - a small tappable tile with an optional icon, a title and a subtitle, used for the two quick actions.
 class _QuickTile extends StatelessWidget {
+  /// Constructor - title, subtitle and onTap are required; icon is optional.
   const _QuickTile({
     required this.title,
     required this.subtitle,
@@ -470,6 +506,7 @@ class _QuickTile extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
 
+  /// build() - an AppCard that calls onTap when pressed, showing the optional icon beside the bold title and the muted subtitle below.
   @override
   Widget build(BuildContext context) {
     return AppCard(

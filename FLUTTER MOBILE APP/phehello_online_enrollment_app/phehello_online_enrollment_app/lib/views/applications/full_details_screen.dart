@@ -3,6 +3,8 @@
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
 
+// FILE PURPOSE: full_details_screen.dart defines the read-only "Full Application Details" screen that lists
+// everything the parent submitted (application, learner, academic, medical), plus payment attempts and the status history.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,12 +18,16 @@ import '../widgets/app_header.dart';
 import '../widgets/state_views.dart';
 import '../widgets/status_chip.dart';
 
+/// FullDetailsScreen (class) - shows all submitted details of one application, read-only.
 /// Read-only view of everything submitted (View Full Details).
 class FullDetailsScreen extends StatelessWidget {
+  /// Constructor - the application id is required.
   const FullDetailsScreen({super.key, required this.applicationId});
 
   final String applicationId;
 
+  /// build() - finds the application in ApplicationsViewModel. It draws the "Full Application Details" header (with a back button) and either an
+  /// "Application not found" message or the content.
   @override
   Widget build(BuildContext context) {
     final app = context.watch<ApplicationsViewModel>().byId(applicationId);
@@ -38,7 +44,8 @@ class FullDetailsScreen extends StatelessWidget {
                 ? const EmptyState(
                     icon: Icons.error_outline,
                     title: 'Application not found',
-                    message: 'Please go back and open the application again.')
+                    message: 'Please go back and open the application again.',
+                  )
                 : _content(app),
           ),
         ],
@@ -46,26 +53,46 @@ class FullDetailsScreen extends StatelessWidget {
     );
   }
 
+  /// _content() - builds the list of sections: Application (reference, status, payment status, grade, submission date); Learner (names, date of birth, gender,
+  /// masked ID, student number); Academic & School History; Medical & Family; a "Payment attempts" card (newest first, each with a status chip), if any; and a "Status history"
+  /// card (newest first), if any.
   Widget _content(EnrolmentApplication app) {
     final l = app.learner;
     final m = app.medical;
     final history = [...app.history]
-      ..sort((a, b) => (b.changedAt ?? DateTime(2000)).compareTo(a.changedAt ?? DateTime(2000)));
+      ..sort(
+        (a, b) => (b.changedAt ?? DateTime(2000)).compareTo(
+          a.changedAt ?? DateTime(2000),
+        ),
+      );
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       children: [
         _Section('Application', [
           _Row('Reference', app.referenceNumber),
           _Row('Status', app.status.dbValue),
-          _Row('Payment status', (app.latestPayment?.status ?? app.paymentStatus).dbValue),
+          _Row(
+            'Payment status',
+            (app.latestPayment?.status ?? app.paymentStatus).dbValue,
+          ),
           _Row('Grade applied for', app.gradeApplied),
-          _Row('Submitted', app.submittedAt == null ? '-' : Formatters.longDate(app.submittedAt!)),
+          _Row(
+            'Submitted',
+            app.submittedAt == null
+                ? '-'
+                : Formatters.longDate(app.submittedAt!),
+          ),
         ]),
         _Section('Learner', [
           _Row('Full name', l?.fullName ?? '-'),
           _Row('Initials / nickname', l?.initials),
           _Row('Other names', l?.otherNames),
-          _Row('Date of birth', l?.dateOfBirth == null ? null : Formatters.longDate(l!.dateOfBirth!)),
+          _Row(
+            'Date of birth',
+            l?.dateOfBirth == null
+                ? null
+                : Formatters.longDate(l!.dateOfBirth!),
+          ),
           _Row('Gender', l?.gender),
           _Row('ID / passport', Formatters.maskId(l?.idNumber)),
           _Row('Student number', l?.studentNumber),
@@ -90,11 +117,17 @@ class FullDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Payment attempts',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                const Text(
+                  'Payment attempts',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 8),
-                for (final p in ([...app.payments]..sort((a, b) =>
-                    (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)))))
+                for (final p
+                    in ([...app.payments]..sort(
+                      (a, b) => (b.createdAt ?? DateTime(2000)).compareTo(
+                        a.createdAt ?? DateTime(2000),
+                      ),
+                    )))
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
@@ -119,8 +152,10 @@ class FullDetailsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Status history',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                const Text(
+                  'Status history',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 8),
                 for (final h in history)
                   Padding(
@@ -139,32 +174,45 @@ class FullDetailsScreen extends StatelessWidget {
   }
 }
 
+/// _Row (class) - a small data holder for one label/value pair shown in a section.
 class _Row {
+  /// Constructor - label and value (the value may be null).
   const _Row(this.label, this.value);
   final String label;
   final String? value;
 }
 
+/// _Section (class) - a card with a title and a list of rows. Rows whose value is empty are hidden.
 class _Section extends StatelessWidget {
+  /// Constructor - title and rows are positional parameters.
   const _Section(this.title, this.rows);
 
   final String title;
   final List<_Row> rows;
 
+  /// build() - keeps only the rows that have a value. It draws a card with the title and, for each visible row, the label on the left and the bold value on
+  /// the right; if there are no visible rows it shows "Nothing provided."
   @override
   Widget build(BuildContext context) {
-    final visible = rows.where((r) => (r.value ?? '').trim().isNotEmpty).toList();
+    final visible = rows
+        .where((r) => (r.value ?? '').trim().isNotEmpty)
+        .toList();
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: AppCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 8),
             if (visible.isEmpty)
-              const Text('Nothing provided.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+              const Text(
+                'Nothing provided.',
+                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+              ),
             for (final r in visible)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -173,14 +221,24 @@ class _Section extends StatelessWidget {
                   children: [
                     Expanded(
                       flex: 5,
-                      child: Text(r.label,
-                          style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                      child: Text(
+                        r.label,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                     ),
                     Expanded(
                       flex: 6,
-                      child: Text(r.value!,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                      child: Text(
+                        r.value!,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),

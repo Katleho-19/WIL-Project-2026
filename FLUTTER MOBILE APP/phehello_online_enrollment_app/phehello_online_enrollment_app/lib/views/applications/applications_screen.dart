@@ -3,6 +3,9 @@
 //Group members: KI Makhoali, PIJ Lebusa, RL Mahlatsi, M Lepitla, MM Motaung, DT Adegbola
 //Student numbers: 224131387, 221000537, 220049867, 222018199, 224074632, 220042034
 
+// FILE PURPOSE: applications_screen.dart defines the My Applications tab (FR5): a list of all the parent's
+// applications with filter pills (All / Pending / Approved / Rejected) and the loading, error and empty states.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,10 +19,13 @@ import '../widgets/buttons.dart';
 import '../widgets/state_views.dart';
 import '../widgets/status_chip.dart';
 
+/// ApplicationsScreen (class) - the Applications tab of the main shell. It has no state of its own; the list and the selected filter live in ApplicationsViewModel.
 /// My Applications (FR5): filter All / Pending / Approved / Rejected.
 class ApplicationsScreen extends StatelessWidget {
+  /// Constructor - no required parameters.
   const ApplicationsScreen({super.key});
 
+  /// _labels - the text shown on each filter pill.
   static const _labels = {
     ApplicationFilter.all: 'All',
     ApplicationFilter.pending: 'Pending',
@@ -27,6 +33,10 @@ class ApplicationsScreen extends StatelessWidget {
     ApplicationFilter.rejected: 'Rejected',
   };
 
+  /// build() - watches ApplicationsViewModel and takes the filtered list. It chooses the body: a loader on first load; an error
+  /// message with a retry button; an empty-state with a "Start New Application" button if there are no applications at all; a "Nothing here"
+  /// message if the selected filter has no matches; otherwise a pull-to-refresh list of _ApplicationListCard widgets. It then draws the
+  /// "My Applications" header, a horizontal row of _FilterPill buttons and the body.
   @override
   Widget build(BuildContext context) {
     final apps = context.watch<ApplicationsViewModel>();
@@ -97,7 +107,9 @@ class ApplicationsScreen extends StatelessWidget {
   }
 }
 
+/// _FilterPill (class) - one pill-shaped filter button; brown with white text when selected, light tile with brown text when not.
 class _FilterPill extends StatelessWidget {
+  /// Constructor - label, selected and onTap are required.
   const _FilterPill({
     required this.label,
     required this.selected,
@@ -108,6 +120,7 @@ class _FilterPill extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  /// build() - a tappable rounded container showing the label, coloured according to 'selected'.
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -133,15 +146,21 @@ class _FilterPill extends StatelessWidget {
   }
 }
 
+/// _ApplicationListCard (class) - the card for one application in the list.
 class _ApplicationListCard extends StatelessWidget {
+  /// Constructor - the EnrolmentApplication is required.
   const _ApplicationListCard({required this.app});
 
   final EnrolmentApplication app;
 
+  /// _open() - opens the Application Details screen for this application.
   void _open(BuildContext context) {
     RouteManager.toApplicationDetails(context, app.id);
   }
 
+  /// build() - works out whether the application is in the pending group and what its latest payment status is. The card shows the
+  /// reference number, the subtitle and the status chip; for pending applications it also shows the payment status line and a "View Details" button.
+  /// Tapping anywhere on the card opens the details.
   @override
   Widget build(BuildContext context) {
     final pending = app.status.isPendingGroup;
