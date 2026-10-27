@@ -84,6 +84,18 @@ namespace PhehelloEnrollmentSchool.Models
         public string? VerificationStatus { get; set; }
     }
 
+    public sealed class DocumentRequestRow
+    {
+        public Guid RequestId { get; set; }
+        public Guid ApplicationId { get; set; }
+        public string DocumentType { get; set; } = "";
+        public string RoutedTo { get; set; } = "";
+        public string Status { get; set; } = "Requested";
+        public Guid? DocumentId { get; set; }
+        public Guid? PaymentId { get; set; }
+        public DateTimeOffset? SubmittedAt { get; set; }
+    }
+
     /// <summary>
     /// PaymentRow (class) - one row of the payments table: a proof-of-payment submission with its reference, amount, proof file, verification status
     /// (Pending by default), who verified it, when and any notes. It can also carry the parent application when the query embeds it.
@@ -91,6 +103,9 @@ namespace PhehelloEnrollmentSchool.Models
     public sealed class PaymentRow
     {
         public Guid PaymentId { get; set; }
+        [JsonIgnore]
+        public bool IsResubmission { get; set; }
+        public List<DocumentRequestRow>? Requests { get; set; }
         public Guid ApplicationId { get; set; }
         public Guid? SchoolPaymentRecordId { get; set; }
         public string? PaymentReference { get; set; }
@@ -115,6 +130,9 @@ namespace PhehelloEnrollmentSchool.Models
     public sealed class ApplicationRow
     {
         public Guid ApplicationId { get; set; }
+
+        [JsonPropertyName("document_requests")]
+        public List<DocumentRequestRow>? Requests { get; set; }
         public string? ReferenceNumber { get; set; }
         public Guid LearnerId { get; set; }
         public Guid SubmittedBy { get; set; }

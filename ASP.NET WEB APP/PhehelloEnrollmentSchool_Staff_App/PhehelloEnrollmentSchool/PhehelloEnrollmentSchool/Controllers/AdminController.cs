@@ -231,6 +231,11 @@ namespace PhehelloEnrollmentSchool.Controllers
                 Chip = payment == null ? "pending" : Fmt.ChipClass(payment.VerificationStatus),
                 ViewUrl = null
             });
+            foreach (var l in lines)
+                l.Resubmitted = app.Requests?.Any(r => r.Status == "Submitted" &&
+                    string.Equals(Pretty(r.DocumentType), l.Name, StringComparison.OrdinalIgnoreCase)) == true;
+            if ((app.Payments?.Count ?? 0) > 1)
+                lines.First(l => l.Name == "Proof of Payment").Resubmitted = true;
 
             // Has the Financial Clerk verified the payment? Approval depends on this.
             var paymentVerified = app.PaymentVerificationStatus == PayStatus.Verified;
@@ -285,7 +290,8 @@ namespace PhehelloEnrollmentSchool.Controllers
         /// message = text for the parent; internalNote = private note saved against the application.
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> Decide(Guid id, string decision, string? message, string? internalNote, CancellationToken ct)
+        [HttpPost]
+        public async Task<IActionResult> Decide(Guid id, string decision, string? message, string? internalNote,string[]? requestedDocs, CancellationToken ct)
         {
             try
             {
@@ -296,7 +302,6 @@ namespace PhehelloEnrollmentSchool.Controllers
                 string newStatus;
                 switch (decision)
                 {
-                    // Approve: allowed only while the application is open AND the payment has been verified.
                     case "approve":
                         if (!AppStatus.IsOpen(app.Status)) { Failure("This application has already been decided."); break; }
                         if (app.PaymentVerificationStatus != PayStatus.Verified)
@@ -306,30 +311,49 @@ namespace PhehelloEnrollmentSchool.Controllers
                         Success("Application approved.");
                         break;
 
-                    // Request corrections: only while waiting for review, and a message telling the parent what to fix is required.
+
                     case "corrections":
-                        if (app.Status is not (AppStatus.Pending or AppStatus.PendingPayment))
-                        { Failure("Corrections can only be requested on an application that is waiting for review."); break; }
+                        // Allow corrections for applications still open for review,
+                        // including applications whose proof of payment was rejected.
+                        if (!AppStatus.IsOpen(app.Status))
+                        {
+                            Failure("Corrections can only be requested on an open application.");
+                            break;
+                        }
+
+                        if (requestedDocs == null || requestedDocs.Length == 0)
+                        {
+                            Failure("Tick at least one document the parent must resubmit.");
+                            break;
+                        }
+
                         if (string.IsNullOrWhiteSpace(message))
-                        { Failure("Tell the parent what needs to be corrected."); break; }
+                        {
+                            Failure("Tell the parent what needs to be corrected.");
+                            break;
+                        }
+
+                        message += $"\n\nPlease resubmit: {string.Join(", ", requestedDocs)}.";
+
                         await ApplyDecision(app, AppStatus.Corrections, message, internalNote, ct);
+                        await _apps.AddDocumentRequestsAsync(
+                            app.ApplicationId, UserId, requestedDocs, message, ct);
+
                         Success("Corrections requested. The parent has been notified.");
                         break;
 
-                    // Reject: allowed while the application is open; the message is optional.
+
                     case "reject":
                         if (!AppStatus.IsOpen(app.Status)) { Failure("This application has already been decided."); break; }
                         await ApplyDecision(app, AppStatus.Rejected, message, internalNote, ct);
                         Success("Application rejected.");
                         break;
 
-                    // Any other value is an invalid request.
                     default:
                         Failure("Unknown action.");
                         break;
                 }
             }
-            // Show database errors as a message; a 401 (session expired) is left to the global handler so the user is sent to log in again.
             catch (SupabaseApiException ex) when (ex.StatusCode != 401)
             {
                 Failure(ex.UserMessage);

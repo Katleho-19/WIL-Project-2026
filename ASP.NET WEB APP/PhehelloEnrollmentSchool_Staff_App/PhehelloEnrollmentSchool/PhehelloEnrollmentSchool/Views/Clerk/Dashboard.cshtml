@@ -34,7 +34,8 @@
                     <td>@(p.Application?.DisplayId ?? "—")</td>
                     <td>@(p.Application?.ParentName ?? "—")</td>
                     <td>@Fmt.Money(p.Amount)</td>
-                <td><span class="chip @Fmt.ChipClass(p.VerificationStatus)">@p.VerificationStatus</span></td></tr>
+                    <td><span class="chip @Fmt.ChipClass(p.VerificationStatus)">@p.VerificationStatus</span>@if (p.IsResubmission) {<span class="chip pending">Resubmitted</span>}</td>
+                </tr>
         }
         @if (!Model.Recent.Any()) { <tr><td colspan="4" class="empty">No payments have been submitted yet.</td></tr> }
         </tbody>

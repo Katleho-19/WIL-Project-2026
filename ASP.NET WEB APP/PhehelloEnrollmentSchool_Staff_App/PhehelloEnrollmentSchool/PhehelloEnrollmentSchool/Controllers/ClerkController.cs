@@ -46,6 +46,16 @@ namespace PhehelloEnrollmentSchool.Controllers
         /// If payments come back without their application, the database (Row Level Security) is hiding the
         /// application / parent rows from the Financial Clerk. Say so instead of showing empty cells.
         /// </summary>
+        /// 
+        /// <summary>A payment is a resubmission when the same application already had an earlier payment.</summary>
+        private static void MarkResubmissions(List<PaymentRow> all)
+        {
+            foreach (var g in all.GroupBy(p => p.ApplicationId))
+            {
+                var first = g.OrderBy(p => p.CreatedAt).First();
+                foreach (var p in g) p.IsResubmission = p.PaymentId != first.PaymentId;
+            }
+        }
         private void WarnIfApplicationsHidden(IEnumerable<PaymentRow> payments)
         {
             if (payments.Any(p => p.Application == null))
@@ -59,6 +69,7 @@ namespace PhehelloEnrollmentSchool.Controllers
         {
             // Load every payment the clerk is allowed to see.
             var all = await _payments.ListAsync(ct);
+            MarkResubmissions(all);
             WarnIfApplicationsHidden(all);
             // Only verified payments count towards the "Total Verified Amount" card.
             var verified = all.Where(p => p.VerificationStatus == PayStatus.Verified).ToList();
@@ -101,6 +112,7 @@ namespace PhehelloEnrollmentSchool.Controllers
             string? fixedStatus, ListFilter f, CancellationToken ct)
         {
             var all = await _payments.ListAsync(ct);
+            MarkResubmissions(all);
             WarnIfApplicationsHidden(all);
             // Use the chosen academic year, or the school's current year when none was picked.
             var year = f.Year > 0 ? f.Year : _school.EffectiveYear;

@@ -30,6 +30,8 @@
         hidden.value = b.getAttribute('data-decision');
         title.textContent = c.t;
         field.style.display = c.ask ? 'block' : 'none';
+        document.getElementById('dlgDocsWrap').style.display =b.getAttribute('data-decision') === 'corrections' ? 'block' : 'none';
+        document.querySelectorAll('input[name=requestedDocs]').forEach(function (x) { x.checked = false; });
         msg.required = !!c.req;
         msg.value = '';
         confirmBtn.textContent = c.label;

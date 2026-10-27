@@ -145,6 +145,7 @@ namespace PhehelloEnrollmentSchool.Models
         public string Status { get; set; } = "Received";
         public string Chip { get; set; } = "approved";
         public string? ViewUrl { get; set; }
+        public bool Resubmitted { get; set; }
     }
 
     /// <summary>

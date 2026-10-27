@@ -48,7 +48,12 @@ else
                     <tbody>
                     @foreach (var d in Model.Documents)
                     {
-                        <tr><td>@d.Name</td><td><span class="chip @d.Chip">@d.Status</span></td>
+                            <tr>
+                                <td>@d.Name</td>
+                                <td><span class="chip @d.Chip">@d.Status</span>@if (d.Resubmitted){
+                                <span class="chip pending">Resubmitted</span>
+                            }
+    </td>
                             <td>@if (d.ViewUrl != null) { <a class="btn btn-outline btn-sm" href="@d.ViewUrl" target="_blank" rel="noopener">View</a> } else { <span>—</span> }</td></tr>
                     }
                     </tbody>
@@ -92,6 +97,13 @@ else
                 <label class="lbl" for="dlgMessage">Message to the parent</label>
                 <textarea class="textarea" name="message" id="dlgMessage" placeholder="Explain what needs to be corrected, or why the application was not successful."></textarea>
             </div>
+        <div id="dlgDocsWrap" style="display:none">
+            <label class="lbl">Documents the parent must resubmit</label>
+            @foreach (var d in new[] { "Proof of Payment", "Birth Certificate", "Previous School Progress Report", "Immunisation Record", "Transfer Letter" })
+            {
+                <label style="display:block;margin:4px 0"><input type="checkbox" name="requestedDocs" value="@d" /> @d</label>
+            }
+        </div>
             <div class="btn-row"><button type="submit" id="dlgConfirm" class="btn btn-brown">Confirm</button>
                 <button type="button" id="dlgCancel" class="btn btn-outline">Cancel</button></div>
         </dialog>

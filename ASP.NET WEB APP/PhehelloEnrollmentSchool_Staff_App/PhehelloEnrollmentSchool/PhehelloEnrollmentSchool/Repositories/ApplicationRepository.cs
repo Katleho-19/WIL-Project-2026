@@ -17,6 +17,7 @@ namespace PhehelloEnrollmentSchool.Repositories
     /// </summary>
     public interface IApplicationRepository
     {
+        Task AddDocumentRequestsAsync(Guid applicationId, Guid requestedBy, IEnumerable<string> types, string? message, CancellationToken ct = default);
         Task<List<ApplicationRow>> ListAsync(CancellationToken ct = default);
         Task<ApplicationRow?> GetAsync(Guid applicationId, CancellationToken ct = default);
         Task<DocumentRow?> GetDocumentAsync(Guid documentId, CancellationToken ct = default);
@@ -47,7 +48,7 @@ namespace PhehelloEnrollmentSchool.Repositories
         /// </summary>
         // Full detail for the review page.
         private const string DetailSelect =
-            "*,learners(*),submitter:profiles!applications_submitted_by_fkey(*),payments(*),application_documents(*)";
+            "*,learners(*),submitter:profiles!applications_submitted_by_fkey(*),payments(*),application_documents(*), document_requests(*)";
 
         /// <summary>
         /// _db - the Supabase client used for every request.
@@ -58,6 +59,19 @@ namespace PhehelloEnrollmentSchool.Repositories
         /// Constructor - receives the Supabase client from dependency injection.
         /// </summary>
         public ApplicationRepository(SupabaseClient db) => _db = db;
+
+        public Task AddDocumentRequestsAsync(Guid applicationId, Guid requestedBy, IEnumerable<string> types, string? message, CancellationToken ct = default)
+        {
+            var rows = types.Distinct().Select(t => new
+            {
+                application_id = applicationId,
+                document_type = t,
+                routed_to = t == "Proof of Payment" ? "Financial Clerk" : "Administrator",
+                message,
+                requested_by = requestedBy
+            }).ToList();
+            return rows.Count == 0 ? Task.CompletedTask : _db.InsertAsync("document_requests", rows, null, ct);
+        }
 
         /// <summary>
         /// ListAsync() - loads up to 1000 applications, newest first, using the light column list, and removes drafts (a draft has not been submitted yet).

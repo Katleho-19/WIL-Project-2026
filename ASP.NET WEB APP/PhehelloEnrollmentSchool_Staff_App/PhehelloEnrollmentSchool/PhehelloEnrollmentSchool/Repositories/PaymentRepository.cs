@@ -31,7 +31,7 @@ namespace PhehelloEnrollmentSchool.Repositories
         /// Select - the PostgREST column list: all payment columns plus the related application with the learner's names and student number and the parent's full name.
         /// </summary>
         private const string Select =
-            "*,applications(*,learners(first_name,surname,student_number),submitter:profiles!applications_submitted_by_fkey(full_name))";
+            "*,document_requests(*),applications(*,learners(first_name,surname,student_number),submitter:profiles!applications_submitted_by_fkey(full_name))";
 
         /// <summary>
         /// _db - the Supabase client used for every request.
