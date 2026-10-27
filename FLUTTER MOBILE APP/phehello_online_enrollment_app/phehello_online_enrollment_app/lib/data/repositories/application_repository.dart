@@ -51,6 +51,7 @@ class ApplicationRepository {
       'learners(*, learner_medical_info(*)), '
       'application_documents(*), '
       'payments(*), '
+      'document_requests(*), '
       'application_status_history(*)';
 
   // ---------------------------------------------------------------- reading
