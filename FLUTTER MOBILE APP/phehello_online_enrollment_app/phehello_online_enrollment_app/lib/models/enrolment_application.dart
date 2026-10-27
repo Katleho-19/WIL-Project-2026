@@ -13,6 +13,7 @@ import 'enums.dart';
 import 'learner.dart';
 import 'payment.dart';
 import 'status_history_entry.dart';
+import 'document_request.dart';
 
 /// One enrolment application with its learner, documents and payments.
 ///
@@ -32,6 +33,7 @@ class EnrolmentApplication {
     this.documents = const [],
     this.payments = const [],
     this.history = const [],
+    this.requests = const [],
   });
 
   final String id;
@@ -45,6 +47,13 @@ class EnrolmentApplication {
   final List<ApplicationDocument> documents;
   final List<Payment> payments;
   final List<StatusHistoryEntry> history;
+  final List<DocumentRequest> requests;
+
+  List<DocumentRequest> get openRequests =>
+      requests.where((r) => r.isOpen).toList();
+
+  bool isRequested(String type) =>
+      requests.any((r) => r.isOpen && r.type == type);
 
   /// latestPayment (getter) - returns the newest payment attempt, or null if there are none.
   /// It copies the list, sorts it newest-first by createdAt (missing dates count as the oldest)
@@ -139,6 +148,9 @@ class EnrolmentApplication {
       history: _asList(
         m['application_status_history'],
       ).map(StatusHistoryEntry.fromMap).toList(),
+      requests: _asList(
+        m['document_requests'],
+      ).map(DocumentRequest.fromMap).toList(),
     );
   }
 }

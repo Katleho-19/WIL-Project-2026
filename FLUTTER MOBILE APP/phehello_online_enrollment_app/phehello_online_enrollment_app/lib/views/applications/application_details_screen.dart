@@ -206,6 +206,12 @@ class _ApplicationDetailsView extends StatelessWidget {
         app.status == ApplicationStatus.approved ||
         app.status == ApplicationStatus.rejected;
     final corrections = app.status == ApplicationStatus.correctionsRequested;
+    final proofRequested = app.isRequested('Proof of Payment');
+    final canUploadProof =
+        !isFinal &&
+        (payStatus == PaymentVerificationStatus.rejected ||
+            proofRequested ||
+            (corrections && app.requests.isEmpty));
     final learner = app.learner;
 
     return RefreshIndicator(
@@ -297,27 +303,24 @@ class _ApplicationDetailsView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Corrections needed',
+                    'Documents requested by the school',
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Check the Alerts tab for the message from the school. Replace the '
-                    'documents below, then send your application back for review.',
-                    style: TextStyle(
+                  Text(
+                    app.openRequests.isEmpty
+                        ? 'Upload the document mentioned in the school message (see Alerts).'
+                        : 'Still needed: ${app.openRequests.map((r) => r.type).join(', ')}. '
+                              'Upload each one below. Your application goes back to the '
+                              'school automatically once all are uploaded.',
+                    style: const TextStyle(
                       fontSize: 12.5,
                       color: AppColors.textMuted,
                       height: 1.35,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  PrimaryButton(
-                    label: 'Resubmit for Review',
-                    loading: vm.working,
-                    onPressed: () => _resubmit(context, vm),
                   ),
                 ],
               ),
@@ -333,13 +336,18 @@ class _ApplicationDetailsView extends StatelessWidget {
             if (app.documentOfType(t) != null || t.isRequired)
               _DocumentRow(
                 title: t.label,
-                subtitle: app.documentOfType(t) != null
-                    ? 'Received'
-                    : 'Not received',
+                subtitle: app.isRequested(t.dbValue)
+                    ? 'Requested by the school - please upload a new copy'
+                    : (app.documentOfType(t) != null
+                          ? 'Received'
+                          : 'Not received'),
                 chip: app.documentOfType(t) != null
                     ? StatusChip.received()
                     : StatusChip.missing(),
-                onReplace: corrections && !vm.working
+                onReplace:
+                    corrections &&
+                        !vm.working &&
+                        (app.requests.isEmpty || app.isRequested(t.dbValue))
                     ? () => _replaceDocument(context, vm, t)
                     : null,
               ),
@@ -347,7 +355,9 @@ class _ApplicationDetailsView extends StatelessWidget {
             title: 'Proof of Payment',
             subtitle: payment == null
                 ? 'Not received'
-                : payStatus.documentSubtitle,
+                : (proofRequested
+                      ? 'Requested by the school - please upload a new proof'
+                      : payStatus.documentSubtitle),
             extra: payment == null
                 ? null
                 : 'Reference: ${payment.reference} • ${Formatters.money(payment.amount)}'
@@ -356,8 +366,10 @@ class _ApplicationDetailsView extends StatelessWidget {
                 ? StatusChip.missing()
                 : StatusChip.payment(payStatus),
           ),
-          if (payStatus == PaymentVerificationStatus.rejected && !isFinal) ...[
-            const SizedBox(height: 12),
+
+          if (canUploadProof) ...[
+            const SizedBox(height: 16),
+
             PrimaryButton(
               label: 'Upload New Proof of Payment',
               icon: Icons.upload_file_rounded,
@@ -365,20 +377,23 @@ class _ApplicationDetailsView extends StatelessWidget {
                   ? null
                   : () => _reuploadProof(context, vm, app),
             ),
-          ],
-          const SizedBox(height: 16),
-          OutlineBrandButton(
-            label: 'View Full Details',
-            onPressed: () => RouteManager.toFullDetails(context, app.id),
-          ),
 
-          const SizedBox(height: 12),
-          OutlineBrandButton(
-            label: 'Delete Application',
-            icon: Icons.delete_outline_rounded,
-            danger: true,
-            onPressed: vm.working ? null : () => _delete(context, vm, app),
-          ),
+            const SizedBox(height: 12),
+
+            OutlineBrandButton(
+              label: 'View Full Details',
+              onPressed: () => RouteManager.toFullDetails(context, app.id),
+            ),
+
+            const SizedBox(height: 12),
+
+            OutlineBrandButton(
+              label: 'Delete Application',
+              icon: Icons.delete_outline_rounded,
+              danger: true,
+              onPressed: vm.working ? null : () => _delete(context, vm, app),
+            ),
+          ],
         ],
       ),
     );
