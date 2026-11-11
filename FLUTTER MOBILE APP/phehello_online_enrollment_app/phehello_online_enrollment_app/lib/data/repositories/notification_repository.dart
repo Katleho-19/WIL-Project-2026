@@ -25,7 +25,8 @@ class NotificationRepository {
     final rows = await _c
         .from(Db.notifications)
         .select()
-        .eq('recipient_id', userId);
+        .eq('recipient_id', userId)
+        .order('created_at', ascending: false);
 
     return (rows as List)
         .map(
