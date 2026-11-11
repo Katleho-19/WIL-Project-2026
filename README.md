@@ -152,7 +152,6 @@ Key design decisions:
 
 ## 12. Getting Started
 
-> Fill in the exact commands once the code structure is final.
 
 **Prerequisites:** Flutter SDK, .NET SDK, a Supabase project, and Git.
 
@@ -172,7 +171,7 @@ Key design decisions:
 |---|---|
 | Phase 1 – Requirements and SRS | Complete |
 | Phase 2 – System architecture and design | Complete |
-| Phase 3 – Development, integration and testing | In progress |
+| Phase 3 – Development, integration and testing | complete |
 
 ## 14. Team
 
